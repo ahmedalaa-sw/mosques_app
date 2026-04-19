@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mosques_app/features/bottom_nav/views/bottom_nav_screen.dart';
 import '../routing/routes.dart';
 
 class AppRouter {
@@ -12,7 +13,7 @@ class AppRouter {
       // return _createRoute(HomeScreen());
 
       case Routes.bottomNavScreen:
-      // return _createRoute(BottomNavBarScreen());
+        return _createRoute(const BottomNavScreen());
 
       default:
         return MaterialPageRoute(
