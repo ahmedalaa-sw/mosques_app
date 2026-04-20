@@ -30,7 +30,7 @@ class MosqueSearchRepo {
   Future<List<MosqueModel>> fetchNearbyMosques({
     required double lat,
     required double lng,
-    int radius = 5000,
+    int radius = 1000,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       EndpointConstants.nearbySearch,

@@ -34,6 +34,32 @@ class MosqueModel {
     return '${(distanceMeters / 1000).toStringAsFixed(1)} km';
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'address': address,
+        'distanceMeters': distanceMeters,
+        'isOpen': isOpen,
+        'amenities': amenities,
+        'lat': lat,
+        'lng': lng,
+        'photoReference': photoReference,
+      };
+
+  factory MosqueModel.fromCache(Map<String, dynamic> json) {
+    return MosqueModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      address: json['address'] as String,
+      distanceMeters: (json['distanceMeters'] as num).toDouble(),
+      isOpen: json['isOpen'] as bool?,
+      amenities: List<String>.from(json['amenities'] as List),
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
+      photoReference: json['photoReference'] as String?,
+    );
+  }
+
   factory MosqueModel.fromJson(
     Map<String, dynamic> json, {
     required double distanceMeters,
@@ -74,3 +100,5 @@ class MosqueModel {
     return map[type];
   }
 }
+
+
