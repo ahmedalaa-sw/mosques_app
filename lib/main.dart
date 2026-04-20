@@ -9,7 +9,7 @@ import 'app_bloc_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
+  await Hive.initFlutter(); 
   // Hive.registerAdapter(MosquesModelAdapter());
 
   // await Hive.openBox<MosquesModel>('favoritesBox');
