@@ -4,7 +4,6 @@ class MosqueModel {
   final String id;
   final String name;
   final String address;
-  final double rating;
   final double distanceMeters;
   final bool? isOpen;
   final List<String> amenities;
@@ -16,7 +15,6 @@ class MosqueModel {
     required this.id,
     required this.name,
     required this.address,
-    required this.rating,
     required this.distanceMeters,
     required this.isOpen,
     required this.amenities,
@@ -54,7 +52,6 @@ class MosqueModel {
       id: json['place_id'] as String,
       name: json['name'] as String,
       address: json['vicinity'] as String? ?? '',
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       distanceMeters: distanceMeters,
       isOpen: openingHours?['open_now'] as bool?,
       amenities: types,

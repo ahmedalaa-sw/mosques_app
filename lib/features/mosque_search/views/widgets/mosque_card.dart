@@ -22,8 +22,6 @@ class MosqueCard extends StatelessWidget {
           _MosqueIconBox(photoUrl: mosque.photoUrl),
           SizedBox(width: 12.w),
           Expanded(child: _MosqueInfo(mosque: mosque)),
-          SizedBox(width: 8.w),
-          _RatingBadge(rating: mosque.rating),
         ],
       ),
     );
@@ -173,31 +171,6 @@ class _Chip extends StatelessWidget {
           letterSpacing: 0.5,
         ),
       ),
-    );
-  }
-}
-
-class _RatingBadge extends StatelessWidget {
-  final double rating;
-
-  const _RatingBadge({required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.star_rounded, color: AppColor.secondaryColor, size: 14.sp),
-        SizedBox(width: 2.w),
-        Text(
-          rating.toStringAsFixed(1),
-          style: TextStyle(
-            color: AppColor.secondaryColor,
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
     );
   }
 }
