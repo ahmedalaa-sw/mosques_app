@@ -41,6 +41,12 @@ class MosqueSearchScreen extends StatelessWidget {
               Expanded(
                 child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
                   builder: (context, state) {
+                    if (state is MosqueSearchLocating) {
+                      return const _StatusMessage(
+                        icon: Icons.my_location_rounded,
+                        label: 'Finding your location…',
+                      );
+                    }
                     if (state is MosqueSearchLoading) {
                       return const Center(
                         child: CircularProgressIndicator(
@@ -50,6 +56,12 @@ class MosqueSearchScreen extends StatelessWidget {
                     }
                     if (state is MosqueSearchSuccess) {
                       return _MosqueList(mosques: state.mosques);
+                    }
+                    if (state is MosqueSearchError) {
+                      return _StatusMessage(
+                        icon: Icons.location_off_rounded,
+                        label: state.message,
+                      );
                     }
                     return const SizedBox.shrink();
                   },
@@ -102,6 +114,37 @@ class _MosqueList extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StatusMessage extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _StatusMessage({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColor.onSurfaceVariant, size: 40.sp),
+          SizedBox(height: 12.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColor.onSurfaceVariant,
+                fontSize: 14.sp,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

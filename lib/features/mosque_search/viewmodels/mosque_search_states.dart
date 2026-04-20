@@ -4,6 +4,8 @@ abstract class MosqueSearchState {}
 
 class MosqueSearchInitial extends MosqueSearchState {}
 
+class MosqueSearchLocating extends MosqueSearchState {}
+
 class MosqueSearchLoading extends MosqueSearchState {}
 
 class MosqueSearchSuccess extends MosqueSearchState {

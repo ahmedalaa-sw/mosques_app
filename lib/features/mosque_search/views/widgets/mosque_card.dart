@@ -88,7 +88,7 @@ class _MosqueInfo extends StatelessWidget {
             ),
             SizedBox(width: 4.w),
             Text(
-              mosque.distance,
+              mosque.distanceLabel,
               style: TextStyle(
                 color: AppColor.onSurfaceVariant,
                 fontSize: 12.sp,
