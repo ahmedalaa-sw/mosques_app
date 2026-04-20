@@ -1,10 +1,12 @@
+import 'package:mosques_app/core/network/endpoint_constants.dart';
+
 class MosqueModel {
   final String id;
   final String name;
   final String address;
   final double rating;
   final double distanceMeters;
-  final bool isOpen;
+  final bool? isOpen;
   final List<String> amenities;
   final double lat;
   final double lng;
@@ -22,6 +24,10 @@ class MosqueModel {
     required this.lng,
     this.photoReference,
   });
+
+  String? get photoUrl => photoReference == null
+      ? null
+      : EndpointConstants.placePhotoUrl(photoReference!);
 
   String get distanceLabel {
     if (distanceMeters < 1000) {
@@ -50,7 +56,7 @@ class MosqueModel {
       address: json['vicinity'] as String? ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       distanceMeters: distanceMeters,
-      isOpen: openingHours?['open_now'] as bool? ?? false,
+      isOpen: openingHours?['open_now'] as bool?,
       amenities: types,
       lat: (location['lat'] as num).toDouble(),
       lng: (location['lng'] as num).toDouble(),

@@ -13,62 +13,58 @@ class MosqueSearchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => MosqueSearchCubit()..loadMosques(),
-      child: Scaffold(
-        backgroundColor: AppColor.surfaceDim,
-        floatingActionButton: _MapFab(),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: _ScreenHeader(),
-              ),
-              SizedBox(height: 16.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
-                  buildWhen: (_, __) => false,
-                  builder: (context, _) => MosqueSearchBar(
-                    onChanged: context.read<MosqueSearchCubit>().search,
-                  ),
+    return Scaffold(
+      backgroundColor: AppColor.surfaceDim,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 20.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: _ScreenHeader(),
+            ),
+            SizedBox(height: 16.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
+                buildWhen: (_, __) => false,
+                builder: (context, _) => MosqueSearchBar(
+                  onChanged: context.read<MosqueSearchCubit>().search,
                 ),
               ),
-              SizedBox(height: 24.h),
-              Expanded(
-                child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
-                  builder: (context, state) {
-                    if (state is MosqueSearchLocating) {
-                      return const _StatusMessage(
-                        icon: Icons.my_location_rounded,
-                        label: 'Finding your location…',
-                      );
-                    }
-                    if (state is MosqueSearchLoading) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColor.primaryColor,
-                        ),
-                      );
-                    }
-                    if (state is MosqueSearchSuccess) {
-                      return _MosqueList(mosques: state.mosques);
-                    }
-                    if (state is MosqueSearchError) {
-                      return _StatusMessage(
-                        icon: Icons.location_off_rounded,
-                        label: state.message,
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
+            ),
+            SizedBox(height: 24.h),
+            Expanded(
+              child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
+                builder: (context, state) {
+                  if (state is MosqueSearchLocating) {
+                    return const _StatusMessage(
+                      icon: Icons.my_location_rounded,
+                      label: 'Finding your location…',
+                    );
+                  }
+                  if (state is MosqueSearchLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColor.primaryColor,
+                      ),
+                    );
+                  }
+                  if (state is MosqueSearchSuccess) {
+                    return _MosqueList(mosques: state.mosques);
+                  }
+                  if (state is MosqueSearchError) {
+                    return _StatusMessage(
+                      icon: Icons.location_off_rounded,
+                      label: state.message,
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -149,19 +145,3 @@ class _StatusMessage extends StatelessWidget {
   }
 }
 
-class _MapFab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton(
-      onPressed: () {},
-      backgroundColor: AppColor.secondaryColor,
-      shape: const CircleBorder(),
-      elevation: 0,
-      child: Icon(
-        Icons.map_outlined,
-        color: AppColor.onSecondary,
-        size: 22.sp,
-      ),
-    );
-  }
-}

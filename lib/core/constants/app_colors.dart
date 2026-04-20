@@ -28,6 +28,9 @@ class AppColor {
   static const Color outline = Color(0xFF89938F);
   static const Color outlineVariant = Color(0xFF3F4945);
 
+  // ── Semantic ──
+  static const Color errorColor = Color(0xFFCF6679);
+
   // ── Legacy ──
   static const Color backgroundColor = Color(0xffF8FBFC);
   static const Color grayColor = Colors.grey;

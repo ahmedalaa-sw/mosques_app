@@ -7,4 +7,10 @@ class EndpointConstants {
       'https://maps.googleapis.com/maps/api/place';
   static const String nearbySearch = '/nearbysearch/json';
   static const String placesApiKey = 'AIzaSyCn2_UWt0RFlO2r83-KXR2kVuIsiukMRJ4';
+
+  static String placePhotoUrl(String photoReference, {int maxWidth = 400}) =>
+      '$placesBaseUrl/photo'
+      '?maxwidth=$maxWidth'
+      '&photoreference=$photoReference'
+      '&key=$placesApiKey';
 }

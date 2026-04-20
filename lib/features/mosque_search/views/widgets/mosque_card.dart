@@ -19,7 +19,7 @@ class MosqueCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MosqueIconBox(),
+          _MosqueIconBox(photoUrl: mosque.photoUrl),
           SizedBox(width: 12.w),
           Expanded(child: _MosqueInfo(mosque: mosque)),
           SizedBox(width: 8.w),
@@ -31,29 +31,45 @@ class MosqueCard extends StatelessWidget {
 }
 
 class _MosqueIconBox extends StatelessWidget {
+  final String? photoUrl;
+
+  const _MosqueIconBox({this.photoUrl});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 76.w,
-      height: 76.w,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColor.primaryContainer,
-            AppColor.surfaceContainer,
-          ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14.r),
+      child: Container(
+        width: 76.w,
+        height: 76.w,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColor.primaryContainer, AppColor.surfaceContainer],
+          ),
+          borderRadius: BorderRadius.circular(14.r),
         ),
-        borderRadius: BorderRadius.circular(14.r),
-      ),
-      child: Icon(
-        Icons.mosque_rounded,
-        color: AppColor.primaryColor,
-        size: 36.sp,
+        child: photoUrl != null
+            ? Image.network(
+                photoUrl!,
+                fit: BoxFit.cover,
+                loadingBuilder: (_, child, progress) =>
+                    progress == null ? child : _fallbackIcon(),
+                errorBuilder: (_, __, ___) => _fallbackIcon(),
+              )
+            : _fallbackIcon(),
       ),
     );
   }
+
+  Widget _fallbackIcon() => Center(
+        child: Icon(
+          Icons.mosque_rounded,
+          color: AppColor.primaryColor,
+          size: 36.sp,
+        ),
+      );
 }
 
 class _MosqueInfo extends StatelessWidget {
@@ -112,12 +128,13 @@ class _StatusRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final badges = <Widget>[];
 
-    if (mosque.isOpen) {
+    if (mosque.isOpen == true) {
       badges.add(_Chip(label: 'OPEN', color: AppColor.primaryColor));
+    } else if (mosque.isOpen == false) {
+      badges.add(_Chip(label: 'CLOSED', color: AppColor.errorColor));
     }
 
     for (final amenity in mosque.amenities) {
-      badges.add(SizedBox(width: 6.w));
       badges.add(
         _Chip(label: amenity.toUpperCase(), color: AppColor.onSurfaceVariant),
       );

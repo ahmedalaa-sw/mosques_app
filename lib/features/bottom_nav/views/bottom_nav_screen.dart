@@ -7,6 +7,7 @@ import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_cubit.dart
 import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_states.dart';
 import 'package:mosques_app/features/favorite/views/favorite_screen.dart';
 import 'package:mosques_app/features/more/views/more_screen.dart';
+import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_cubit.dart';
 import 'package:mosques_app/features/mosque_search/views/mosque_search_screen.dart';
 import 'package:mosques_app/features/prayer_times/views/prayer_times_screen.dart';
 
@@ -22,14 +23,22 @@ class BottomNavScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => BottomNavCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => BottomNavCubit()),
+        BlocProvider(create: (_) => MosqueSearchCubit()..loadMosques()),
+      ],
       child: BlocBuilder<BottomNavCubit, BottomNavState>(
         builder: (context, state) {
           final cubit = context.read<BottomNavCubit>();
           return Scaffold(
             backgroundColor: AppColor.surfaceDim,
             extendBody: true,
+            floatingActionButton: cubit.currentIndex == 1
+                ? _MapFab()
+                : null,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.endFloat,
             body: IndexedStack(
               index: cubit.currentIndex,
               children: _screens,
@@ -149,6 +158,23 @@ class _NavItemWidget extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MapFab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => context.read<MosqueSearchCubit>().loadMosques(),
+      backgroundColor: AppColor.secondaryColor,
+      shape: const CircleBorder(),
+      elevation: 0,
+      child: Icon(
+        Icons.my_location_rounded,
+        color: AppColor.onSecondary,
+        size: 22.sp,
       ),
     );
   }
