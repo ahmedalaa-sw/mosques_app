@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:mosques_app/core/constants/app_constants.dart';
 import 'package:mosques_app/core/services/location_service.dart';
 import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
@@ -14,10 +16,10 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
 
   List<MosqueModel> _all = [];
 
-  static const _kCachedLat = 'cached_lat';
-  static const _kCachedLng = 'cached_lng';
-  static const _kCachedMosques = 'cached_mosques';
-  static const _kLocationThresholdMeters = 1000.0;
+  static const _kCachedLat = AppConstants.cachedLat;
+  static const _kCachedLng = AppConstants.cachedLng;
+  static const _kCachedMosques = AppConstants.cachedMosques;
+  static const _kLocationThresholdMeters = AppConstants.locationThresholdMeters;
 
   MosqueSearchCubit()
       : _locationService = LocationService(),
@@ -51,9 +53,19 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   }
 
   Future<List<MosqueModel>?> _tryLoadFromCache(Position pos) async {
-    final cachedLat = await AppPreferences.getDouble(_kCachedLat);
-    final cachedLng = await AppPreferences.getDouble(_kCachedLng);
-    if (cachedLat == null || cachedLng == null) return null;
+    debugPrint('🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}');
+
+    final [cachedLat, cachedLng] = await Future.wait([
+      AppPreferences.getDouble(_kCachedLat),
+      AppPreferences.getDouble(_kCachedLng),
+    ]);
+
+    if (cachedLat == null || cachedLng == null) {
+      debugPrint('🔍 [Cache] No cached location found → will call API');
+      return null;
+    }
+
+    debugPrint('🔍 [Cache] Cached GPS → lat:$cachedLat, lng:$cachedLng');
 
     final distance = Geolocator.distanceBetween(
       pos.latitude,
@@ -61,24 +73,37 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       cachedLat,
       cachedLng,
     );
-    if (distance >= _kLocationThresholdMeters) return null;
+
+    debugPrint('🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  (threshold: ${_kLocationThresholdMeters.toInt()} m)');
+
+    if (distance >= _kLocationThresholdMeters) {
+      debugPrint('❌ [Cache] MISS — moved too far, calling API');
+      return null;
+    }
 
     final json = await AppPreferences.getString(_kCachedMosques);
-    if (json == null) return null;
+    if (json == null) {
+      debugPrint('❌ [Cache] MISS — no cached results, calling API');
+      return null;
+    }
 
     final list = jsonDecode(json) as List<dynamic>;
+    debugPrint('✅ [Cache] HIT — loading ${list.length} mosques from cache, skipping API');
     return list
         .map((e) => MosqueModel.fromCache(e as Map<String, dynamic>))
         .toList();
   }
 
   Future<void> _saveToCache(Position pos, List<MosqueModel> mosques) async {
-    await AppPreferences.saveDouble(_kCachedLat, pos.latitude);
-    await AppPreferences.saveDouble(_kCachedLng, pos.longitude);
-    await AppPreferences.saveString(
-      _kCachedMosques,
-      jsonEncode(mosques.map((m) => m.toJson()).toList()),
-    );
+    await Future.wait([
+      AppPreferences.saveDouble(_kCachedLat, pos.latitude),
+      AppPreferences.saveDouble(_kCachedLng, pos.longitude),
+      AppPreferences.saveString(
+        _kCachedMosques,
+        jsonEncode(mosques.map((m) => m.toJson()).toList()),
+      ),
+    ]);
+    debugPrint('💾 [Cache] Saved ${mosques.length} mosques at lat:${pos.latitude}, lng:${pos.longitude}');
   }
 
   void search(String query) {

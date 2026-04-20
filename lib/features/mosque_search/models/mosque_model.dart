@@ -1,3 +1,4 @@
+import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/core/network/endpoint_constants.dart';
 
 class MosqueModel {
@@ -92,10 +93,10 @@ class MosqueModel {
 
   static String? _displayableAmenity(String type) {
     const map = {
-      'parking': 'Parking',
-      'wheelchair_accessible': 'Accessible',
-      'prayer_room': 'Prayer Room',
-      'wudu': 'Wudu',
+      'parking': AppStrings.amenityParking,
+      'wheelchair_accessible': AppStrings.amenityAccessible,
+      'prayer_room': AppStrings.amenityPrayerRoom,
+      'wudu': AppStrings.amenityWudu,
     };
     return map[type];
   }

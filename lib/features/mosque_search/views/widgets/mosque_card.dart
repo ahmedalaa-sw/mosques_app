@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 
 class MosqueCard extends StatelessWidget {
@@ -127,9 +128,9 @@ class _StatusRow extends StatelessWidget {
     final badges = <Widget>[];
 
     if (mosque.isOpen == true) {
-      badges.add(_Chip(label: 'OPEN', color: AppColor.primaryColor));
+      badges.add(_Chip(label: AppStrings.statusOpen, color: AppColor.primaryColor));
     } else if (mosque.isOpen == false) {
-      badges.add(_Chip(label: 'CLOSED', color: AppColor.errorColor));
+      badges.add(_Chip(label: AppStrings.statusClosed, color: AppColor.errorColor));
     }
 
     for (final amenity in mosque.amenities) {

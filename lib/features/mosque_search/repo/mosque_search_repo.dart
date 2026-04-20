@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:mosques_app/core/constants/app_constants.dart';
 import 'package:mosques_app/core/network/endpoint_constants.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -30,7 +31,7 @@ class MosqueSearchRepo {
   Future<List<MosqueModel>> fetchNearbyMosques({
     required double lat,
     required double lng,
-    int radius = 1000,
+    int radius = AppConstants.defaultSearchRadiusMeters,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       EndpointConstants.nearbySearch,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/core/constants/app_strings.dart';
 
 class MosqueListHeader extends StatelessWidget {
   final int count;
@@ -13,7 +14,7 @@ class MosqueListHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Nearby Sanctuaries',
+          AppStrings.nearbySanctuaries,
           style: TextStyle(
             color: AppColor.onSurface,
             fontSize: 18.sp,
