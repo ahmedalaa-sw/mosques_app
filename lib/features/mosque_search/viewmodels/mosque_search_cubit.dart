@@ -1,0 +1,124 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:mosques_app/core/constants/app_constants.dart';
+import 'package:mosques_app/core/services/location_service.dart';
+import 'package:mosques_app/core/utils/app_shared_preferences.dart';
+import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
+import 'package:mosques_app/features/mosque_search/repo/mosque_search_repo.dart';
+import 'mosque_search_states.dart';
+
+class MosqueSearchCubit extends Cubit<MosqueSearchState> {
+  final LocationService _locationService;
+  final MosqueSearchRepo _repo;
+
+  List<MosqueModel> _all = [];
+
+  static const _kCachedLat = AppConstants.cachedLat;
+  static const _kCachedLng = AppConstants.cachedLng;
+  static const _kCachedMosques = AppConstants.cachedMosques;
+  static const _kLocationThresholdMeters = AppConstants.locationThresholdMeters;
+
+  MosqueSearchCubit()
+      : _locationService = LocationService(),
+        _repo = MosqueSearchRepo(),
+        super(MosqueSearchInitial());
+
+  Future<void> loadMosques() async {
+    try {
+      emit(MosqueSearchLocating());
+      final position = await _locationService.getCurrentLocation();
+
+      final cached = await _tryLoadFromCache(position);
+      if (cached != null) {
+        _all = cached;
+        emit(MosqueSearchSuccess(_all));
+        return;
+      }
+
+      emit(MosqueSearchLoading());
+      final mosques = await _repo.fetchNearbyMosques(
+        lat: position.latitude,
+        lng: position.longitude,
+      );
+
+      await _saveToCache(position, mosques);
+      _all = mosques;
+      emit(MosqueSearchSuccess(_all));
+    } catch (e) {
+      emit(MosqueSearchError(e.toString()));
+    }
+  }
+
+  Future<List<MosqueModel>?> _tryLoadFromCache(Position pos) async {
+    debugPrint('🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}');
+
+    final [cachedLat, cachedLng] = await Future.wait([
+      AppPreferences.getDouble(_kCachedLat),
+      AppPreferences.getDouble(_kCachedLng),
+    ]);
+
+    if (cachedLat == null || cachedLng == null) {
+      debugPrint('🔍 [Cache] No cached location found → will call API');
+      return null;
+    }
+
+    debugPrint('🔍 [Cache] Cached GPS → lat:$cachedLat, lng:$cachedLng');
+
+    final distance = Geolocator.distanceBetween(
+      pos.latitude,
+      pos.longitude,
+      cachedLat,
+      cachedLng,
+    );
+
+    debugPrint('🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  (threshold: ${_kLocationThresholdMeters.toInt()} m)');
+
+    if (distance >= _kLocationThresholdMeters) {
+      debugPrint('❌ [Cache] MISS — moved too far, calling API');
+      return null;
+    }
+
+    final json = await AppPreferences.getString(_kCachedMosques);
+    if (json == null) {
+      debugPrint('❌ [Cache] MISS — no cached results, calling API');
+      return null;
+    }
+
+    final list = jsonDecode(json) as List<dynamic>;
+    debugPrint('✅ [Cache] HIT — loading ${list.length} mosques from cache, skipping API');
+    return list
+        .map((e) => MosqueModel.fromCache(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> _saveToCache(Position pos, List<MosqueModel> mosques) async {
+    await Future.wait([
+      AppPreferences.saveDouble(_kCachedLat, pos.latitude),
+      AppPreferences.saveDouble(_kCachedLng, pos.longitude),
+      AppPreferences.saveString(
+        _kCachedMosques,
+        jsonEncode(mosques.map((m) => m.toJson()).toList()),
+      ),
+    ]);
+    debugPrint('💾 [Cache] Saved ${mosques.length} mosques at lat:${pos.latitude}, lng:${pos.longitude}');
+  }
+
+  void search(String query) {
+    if (query.trim().isEmpty) {
+      emit(MosqueSearchSuccess(_all));
+      return;
+    }
+    final q = query.toLowerCase();
+    final filtered = _all
+        .where(
+          (m) =>
+              m.name.toLowerCase().contains(q) ||
+              m.address.toLowerCase().contains(q),
+        )
+        .toList();
+    emit(MosqueSearchSuccess(filtered));
+  }
+}
