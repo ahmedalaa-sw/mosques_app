@@ -21,7 +21,7 @@ class SunTimingCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: AppColor.textSecondary,
+            color: AppColor.onSurfaceVariant,
             fontSize: 10.sp,
             letterSpacing: 1,
           ),
@@ -30,7 +30,7 @@ class SunTimingCard extends StatelessWidget {
         Text(
           time,
           style: TextStyle(
-            color: AppColor.white,
+            color: AppColor.onSurface,
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
           ),

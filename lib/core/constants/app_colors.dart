@@ -31,18 +31,9 @@ class AppColor {
   // ── Semantic ──
   static const Color errorColor = Color(0xFFCF6679);
 
-  // ── Home feature specific ──
-  static const Color mainNavColor = Color(0xff1e2e2b);
-  static const Color appBarColor = Color(0xff0c1514);
-  static const Color appBarTextColor = Color(0xff88d6c8);
-  static const Color accentTeal = Color(0xff88d6c8);
-  static const Color badgeGold = Color(0xffc4a860);
-
   // ── Legacy / shared ──
   static const Color backgroundColor = Color(0xffF8FBFC);
   static const Color grayColor = Colors.grey;
   static const Color white = Colors.white;
   static const Color black = Colors.black;
-  static const Color textSecondary = Color(0xffb0b0b0);
-  static const Color darkCard = Color(0xff1a2624);
 }

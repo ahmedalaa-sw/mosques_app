@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_schedule_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_time_card.dart';
 
@@ -23,18 +24,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.primaryColor,
+      backgroundColor: AppColor.surfaceDim,
       appBar: AppBar(
         title: const Text(
-          'Al-Masjid',
+          AppStrings.appTitle,
           style: TextStyle(
-            color: AppColor.appBarTextColor,
+            color: AppColor.primaryColor,
             fontSize: 24,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        backgroundColor: AppColor.appBarColor,
+        backgroundColor: AppColor.surface,
         elevation: 0,
         toolbarHeight: 50.h,
       ),

@@ -6,10 +6,7 @@ import 'sun_timing_card.dart';
 class PrayerTimerCard extends StatelessWidget {
   final Duration remainingTime;
 
-  const PrayerTimerCard({
-    super.key,
-    required this.remainingTime,
-  });
+  const PrayerTimerCard({super.key, required this.remainingTime});
 
   String _formatTime(Duration duration) {
     int minutes = duration.inMinutes;
@@ -24,29 +21,26 @@ class PrayerTimerCard extends StatelessWidget {
       alignment: Alignment.center,
       child: Column(
         children: [
-          // Now Praying Label
           Text(
             'NOW PRAYING',
             style: TextStyle(
-              color: AppColor.textSecondary,
+              color: AppColor.onSurfaceVariant,
               fontSize: 12.sp,
               letterSpacing: 1.5,
             ),
           ),
           SizedBox(height: 12.h),
-
-          // Circular Timer Container
           Container(
             width: 220.w,
             height: 240.h,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: [const Color(0xff2a4a44), AppColor.primaryColor],
+                colors: [AppColor.primaryContainer, AppColor.surfaceDim],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xff88d6c8).withOpacity(0.1),
+                  color: AppColor.primaryColor.withValues(alpha: 0.1),
                   blurRadius: 30,
                   spreadRadius: 5,
                 ),
@@ -55,32 +49,32 @@ class PrayerTimerCard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Prayer Name
                 Text(
                   'Dhuhr',
                   style: TextStyle(
-                    color: AppColor.accentTeal,
+                    color: AppColor.primaryColor,
                     fontSize: 48.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(height: 12.h),
-
-                // ONGOING Badge
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 6.h,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColor.badgeGold.withOpacity(0.2),
+                    color: AppColor.secondaryColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: AppColor.badgeGold, width: 1),
+                    border: Border.all(
+                      color: AppColor.secondaryColor,
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     'ONGOING',
                     style: TextStyle(
-                      color: AppColor.badgeGold,
+                      color: AppColor.secondaryColor,
                       fontSize: 10.sp,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1,
@@ -88,25 +82,21 @@ class PrayerTimerCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 16.h),
-
-                // Next Prayer
                 Text(
                   'Next Prayer: Asr in',
                   style: TextStyle(
-                    color: AppColor.textSecondary,
+                    color: AppColor.onSurfaceVariant,
                     fontSize: 15.sp,
                   ),
                 ),
                 SizedBox(height: 8.h),
-
-                // Timer
                 RichText(
                   text: TextSpan(
                     children: [
                       TextSpan(
                         text: _formatTime(remainingTime),
                         style: TextStyle(
-                          color: AppColor.white,
+                          color: AppColor.onSurface,
                           fontSize: 56.sp,
                           fontWeight: FontWeight.w700,
                         ),
@@ -114,7 +104,7 @@ class PrayerTimerCard extends StatelessWidget {
                       TextSpan(
                         text: '12s',
                         style: TextStyle(
-                          color: AppColor.textSecondary,
+                          color: AppColor.onSurfaceVariant,
                           fontSize: 18.sp,
                         ),
                       ),
@@ -125,8 +115,6 @@ class PrayerTimerCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 40.h),
-
-          // Sunrise and Sunset
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

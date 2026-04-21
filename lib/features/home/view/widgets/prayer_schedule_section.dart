@@ -30,7 +30,7 @@ class PrayerScheduleSection extends StatelessWidget {
             Text(
               'Prayer Schedule',
               style: TextStyle(
-                color: AppColor.white,
+                color: AppColor.onSurface,
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
               ),
@@ -40,7 +40,7 @@ class PrayerScheduleSection extends StatelessWidget {
               child: Text(
                 'Full Month',
                 style: TextStyle(
-                  color: AppColor.accentTeal,
+                  color: AppColor.primaryColor,
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
                 ),
@@ -53,7 +53,7 @@ class PrayerScheduleSection extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: prayers.length,
-          separatorBuilder: (context, index) => SizedBox(height: 8.h),
+          separatorBuilder: (_, _) => SizedBox(height: 8.h),
           itemBuilder: (context, index) {
             final prayer = prayers[index];
             final isHighlight = (prayer['highlight'] as bool?) ?? false;
@@ -61,9 +61,11 @@ class PrayerScheduleSection extends StatelessWidget {
             return Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               decoration: BoxDecoration(
-                color: isHighlight ? AppColor.darkCard : AppColor.primaryColor,
+                color: isHighlight
+                    ? AppColor.surfaceContainer
+                    : AppColor.surfaceContainerHigh,
                 border: isHighlight
-                    ? Border.all(color: AppColor.accentTeal, width: 1.5)
+                    ? Border.all(color: AppColor.primaryColor, width: 1.5)
                     : null,
                 borderRadius: BorderRadius.circular(12.r),
               ),
@@ -72,8 +74,8 @@ class PrayerScheduleSection extends StatelessWidget {
                   Icon(
                     prayer['icon'] as IconData,
                     color: isHighlight
-                        ? AppColor.accentTeal
-                        : AppColor.textSecondary,
+                        ? AppColor.primaryColor
+                        : AppColor.onSurfaceVariant,
                     size: 24.sp,
                   ),
                   SizedBox(width: 16.w),
@@ -81,8 +83,9 @@ class PrayerScheduleSection extends StatelessWidget {
                     child: Text(
                       prayer['name'] as String,
                       style: TextStyle(
-                        color:
-                            isHighlight ? AppColor.accentTeal : AppColor.white,
+                        color: isHighlight
+                            ? AppColor.primaryColor
+                            : AppColor.onSurface,
                         fontSize: 16.sp,
                         fontWeight: isHighlight
                             ? FontWeight.w600
@@ -96,15 +99,16 @@ class PrayerScheduleSection extends StatelessWidget {
                       height: 8.h,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColor.accentTeal,
+                        color: AppColor.primaryColor,
                       ),
                     ),
                   SizedBox(width: 8.w),
                   Text(
                     prayer['time'] as String,
                     style: TextStyle(
-                      color:
-                          isHighlight ? AppColor.accentTeal : AppColor.white,
+                      color: isHighlight
+                          ? AppColor.primaryColor
+                          : AppColor.onSurface,
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                     ),
