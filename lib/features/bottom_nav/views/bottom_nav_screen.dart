@@ -6,6 +6,7 @@ import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_states.dar
 import 'package:mosques_app/features/bottom_nav/views/widgets/glass_nav_bar.dart';
 import 'package:mosques_app/features/bottom_nav/views/widgets/map_fab.dart';
 import 'package:mosques_app/features/favorite/views/favorite_screen.dart';
+import 'package:mosques_app/features/home/view/home_screen.dart';
 import 'package:mosques_app/features/more/views/more_screen.dart';
 import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_cubit.dart';
 import 'package:mosques_app/features/mosque_search/views/mosque_search_screen.dart';
@@ -15,7 +16,7 @@ class BottomNavScreen extends StatelessWidget {
   const BottomNavScreen({super.key});
 
   static const List<Widget> _screens = [
-    PrayerTimesScreen(),
+    HomeScreen(),
     MosqueSearchScreen(),
     FavoriteScreen(),
     MoreScreen(),

@@ -31,8 +31,8 @@ class PrayerTimerCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           Container(
-            width: 220.w,
-            height: 240.h,
+            width: 300.w,
+            height: 300.h,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(

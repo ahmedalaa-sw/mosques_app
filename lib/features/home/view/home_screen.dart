@@ -38,6 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColor.surface,
         elevation: 0,
         toolbarHeight: 50.h,
+        foregroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Padding(
