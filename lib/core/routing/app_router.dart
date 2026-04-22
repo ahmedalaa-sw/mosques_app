@@ -1,35 +1,33 @@
 import 'package:flutter/material.dart';
-import '../routing/routes.dart';
-import '../../features/mosque_details/views/mosque_details_screen.dart';
-import '../../features/mosque_details/viewmodels/mosque_details_cubit.dart';
-import '../../features/mosque_details/repo/mosque_details_repo.dart';
+import 'package:mosques_app/core/routing/routes.dart';
+import 'package:mosques_app/features/bottom_nav/views/bottom_nav_screen.dart';
+import 'package:mosques_app/features/home/view/home_screen.dart';
+import 'package:mosques_app/features/mosque_details/repo/mosque_details_repo.dart';
+import 'package:mosques_app/features/mosque_details/viewmodels/mosque_details_cubit.dart';
+import 'package:mosques_app/features/mosque_details/views/mosque_details_screen.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case Routes.signupScreen:
-      // return _createRoute(SignUpScreen());
-      case Routes.signinScreen:
-      // return _createRoute(SignInScreen());
       case Routes.homeScreen:
-      // return _createRoute(HomeScreen());
-      case Routes.bottomNavScreen:
-      // return _createRoute(BottomNavBarScreen());
-      case Routes.mosqueSearchScreen:
-      // return _createRoute(MosqueSearchScreen());
-      case Routes.prayerTimesScreen:
-      // return _createRoute(PrayerTimesScreen());
+        return _createRoute(const HomeScreen());
+      case Routes.searchScreen:
+      // return _createRoute(SearchScreen());
       case Routes.favScreen:
-      // return _createRoute(FavoriteScreen());
-
-      case Routes.mosqueDetailsScreen:
+      // return _createRoute(FavScreen());
+      case Routes.more:
+      // return _createRoute(MoreScreen());
+      case Routes.mosqueDetails:
         final mosqueId = settings.arguments as String? ?? '';
         return _createRoute(
           MosqueDetailsScreen(
-            cubit: MosqueDetailsCubit(MosqueDetailsRepo())..loadMosqueDetails(mosqueId),
+            cubit:
+                MosqueDetailsCubit(MosqueDetailsRepo())
+                  ..loadMosqueDetails(mosqueId),
           ),
         );
-
+      case Routes.bottomNavScreen:
+        return _createRoute(const BottomNavScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
