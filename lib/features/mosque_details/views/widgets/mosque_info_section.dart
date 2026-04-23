@@ -37,31 +37,37 @@ class _StatusAndRatingRow extends StatelessWidget {
       children: [
         // Open / Closed badge
         _GlassBadge(
-          label: mosque.isOpenNow ? StringsConstants.openNow : StringsConstants.closedNow,
-          color: mosque.isOpenNow ? const Color(0xFF84D5C5) : const Color(0xFFFFB4AB),
+          label: mosque.statusLabel,
+          color: _statusColor(),
         ),
-        SizedBox(width: 10.w),
-        // Star rating
-        Icon(Icons.star_rounded, size: 16.sp, color: AppColor.secondaryColor),
-        SizedBox(width: 4.w),
-        Text(
-          mosque.rating.toStringAsFixed(1),
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColor.onSurface,
+        if (mosque.rating > 0) ...[
+          SizedBox(width: 10.w),
+          Icon(
+            Icons.star_rounded,
+            size: 16.sp,
+            color: AppColor.secondaryColor,
           ),
-        ),
-        SizedBox(width: 4.w),
-        Text(
-          '(${mosque.reviewCount} ${StringsConstants.reviews})',
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: AppColor.onSurfaceVariant,
+          SizedBox(width: 4.w),
+          Text(
+            mosque.rating.toStringAsFixed(1),
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColor.onSurface,
+            ),
           ),
-        ),
+        ],
       ],
     );
+  }
+
+  Color _statusColor() {
+    if (mosque.isOpenNow == true) return AppColor.primaryColor;
+    if (mosque.isOpenNow == false) return AppColor.errorColor;
+    if (mosque.statusLabel == StringsConstants.statusNotValid) {
+      return AppColor.secondaryColor;
+    }
+    return AppColor.onSurfaceVariant;
   }
 }
 
@@ -75,21 +81,24 @@ class _StatChipsRow extends StatelessWidget {
       children: [
         _StatChip(
           icon: Icons.location_on_rounded,
-          label: '${mosque.distanceKm.toStringAsFixed(1)} ${StringsConstants.km}',
+          label:
+              '${mosque.distanceKm.toStringAsFixed(1)} ${StringsConstants.km}',
         ),
         SizedBox(width: 10.w),
         if (mosque.capacity != null) ...[
           _StatChip(
             icon: Icons.people_rounded,
-            label: '${_formatCapacity(mosque.capacity!)} ${StringsConstants.worshippers}',
+            label:
+                '${_formatCapacity(mosque.capacity!)} ${StringsConstants.worshippers}',
           ),
         ],
       ],
     );
   }
 
-  String _formatCapacity(int capacity) =>
-      capacity >= 1000 ? '${(capacity / 1000).toStringAsFixed(1)}k' : '$capacity';
+  String _formatCapacity(int capacity) => capacity >= 1000
+      ? '${(capacity / 1000).toStringAsFixed(1)}k'
+      : '$capacity';
 }
 
 class _GlassBadge extends StatelessWidget {

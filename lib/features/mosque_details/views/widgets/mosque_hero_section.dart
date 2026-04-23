@@ -31,14 +31,19 @@ class MosqueHeroSection extends StatelessWidget {
       ),
       actions: [
         _GlassCircleButton(
-          icon: isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          icon: isFavorite
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
           iconColor: isFavorite ? AppColor.secondaryColor : AppColor.onSurface,
           onTap: onFavoriteToggle,
         ),
         SizedBox(width: 8.w),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
+        stretchModes: const [
+          StretchMode.zoomBackground,
+          StretchMode.blurBackground,
+        ],
         background: _HeroBackground(mosque: mosque),
       ),
     );
@@ -122,9 +127,9 @@ class _MosquePlaceholderArt extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF0D2820),
-            Color(0xFF004D43),
-            Color(0xFF192120),
+            AppColor.surface,
+            AppColor.primaryContainer,
+            AppColor.surfaceContainer,
           ],
         ),
       ),

@@ -10,6 +10,8 @@ class StringsConstants {
   static const String mosqueDetails = 'Mosque Details';
   static const String openNow = 'Open Now';
   static const String closedNow = 'Closed Now';
+  static const String statusNotFound = 'Not Found';
+  static const String statusNotValid = 'Status Not Valid';
   static const String getDirections = 'Directions';
   static const String callMosque = 'Call';
   static const String website = 'Website';
@@ -17,11 +19,14 @@ class StringsConstants {
   static const String addToFavorites = 'Add to Favorites';
   static const String removeFromFavorites = 'Remove from Favorites';
   static const String about = 'About';
+  static const String supports = 'Supports';
+  static const String amenitiesNotAvailable = 'Amenities not available';
   static const String location = 'Location';
   static const String capacity = 'Capacity';
   static const String worshippers = 'worshippers';
   static const String km = 'km';
   static const String reviews = 'reviews';
+  static const String openMapsError = 'Could not open Google Maps on this device.';
 
   // ── Prayer Times ──
   static const String prayerTimes = 'Prayer Times';

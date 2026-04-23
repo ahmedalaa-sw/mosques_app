@@ -5,6 +5,7 @@ import 'package:mosques_app/features/home/view/home_screen.dart';
 import 'package:mosques_app/features/mosque_details/repo/mosque_details_repo.dart';
 import 'package:mosques_app/features/mosque_details/viewmodels/mosque_details_cubit.dart';
 import 'package:mosques_app/features/mosque_details/views/mosque_details_screen.dart';
+import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
@@ -18,12 +19,13 @@ class AppRouter {
       case Routes.more:
       // return _createRoute(MoreScreen());
       case Routes.mosqueDetails:
-        final mosqueId = settings.arguments as String? ?? '';
+        final args = settings.arguments;
+        final preview = args is MosqueModel ? args : null;
+        final mosqueId = args is MosqueModel ? args.id : args as String? ?? '';
         return _createRoute(
           MosqueDetailsScreen(
-            cubit:
-                MosqueDetailsCubit(MosqueDetailsRepo())
-                  ..loadMosqueDetails(mosqueId),
+            cubit: MosqueDetailsCubit(MosqueDetailsRepo())
+              ..loadMosqueDetails(mosqueId, preview: preview),
           ),
         );
       case Routes.bottomNavScreen:

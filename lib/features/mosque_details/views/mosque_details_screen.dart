@@ -9,7 +9,6 @@ import 'widgets/mosque_about_card.dart';
 import 'widgets/mosque_action_buttons.dart';
 import 'widgets/mosque_hero_section.dart';
 import 'widgets/mosque_info_section.dart';
-import 'widgets/prayer_times_card.dart';
 
 class MosqueDetailsScreen extends StatelessWidget {
   final MosqueDetailsCubit cubit;
@@ -18,10 +17,7 @@ class MosqueDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: cubit,
-      child: const _MosqueDetailsView(),
-    );
+    return BlocProvider.value(value: cubit, child: const _MosqueDetailsView());
   }
 }
 
@@ -31,7 +27,7 @@ class _MosqueDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.backgroundColor,
+      backgroundColor: AppColor.surfaceDim,
       body: BlocBuilder<MosqueDetailsCubit, MosqueDetailsState>(
         builder: (context, state) {
           if (state is MosqueDetailsLoading || state is MosqueDetailsInitial) {
@@ -40,7 +36,7 @@ class _MosqueDetailsView extends StatelessWidget {
           if (state is MosqueDetailsError) {
             return _ErrorView(
               message: state.message,
-              onRetry: () => context.read<MosqueDetailsCubit>().loadMosqueDetails(''),
+              onRetry: () => context.read<MosqueDetailsCubit>().retry(),
             );
           }
           if (state is MosqueDetailsSuccess) {
@@ -66,7 +62,8 @@ class _SuccessView extends StatelessWidget {
         MosqueHeroSection(
           mosque: mosque,
           isFavorite: mosque.isFavorite,
-          onFavoriteToggle: () => context.read<MosqueDetailsCubit>().toggleFavorite(),
+          onFavoriteToggle: () =>
+              context.read<MosqueDetailsCubit>().toggleFavorite(),
         ),
         SliverToBoxAdapter(
           child: Column(
@@ -75,10 +72,9 @@ class _SuccessView extends StatelessWidget {
               MosqueInfoSection(mosque: mosque),
               SizedBox(height: 20.h),
               MosqueActionButtons(mosque: mosque),
-              SizedBox(height: 24.h),
-              PrayerTimesCard(prayerTimes: mosque.prayerTimes),
               SizedBox(height: 16.h),
               MosqueAboutCard(
+                amenities: mosque.amenities,
                 address: mosque.address,
                 description: mosque.description,
               ),
@@ -119,7 +115,11 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.mosque_rounded, size: 56.sp, color: AppColor.primaryColor),
+            Icon(
+              Icons.mosque_rounded,
+              size: 56.sp,
+              color: AppColor.primaryColor,
+            ),
             SizedBox(height: 16.h),
             Text(
               StringsConstants.error,
@@ -133,7 +133,10 @@ class _ErrorView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13.sp, color: AppColor.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColor.onSurfaceVariant,
+              ),
             ),
             SizedBox(height: 24.h),
             GestureDetector(

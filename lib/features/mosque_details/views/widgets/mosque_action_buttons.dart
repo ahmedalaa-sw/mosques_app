@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/strings_constants.dart';
+import '../../../../core/functions/snakebar_function.dart';
 import '../../models/mosque_detail_model.dart';
 
 class MosqueActionButtons extends StatelessWidget {
@@ -22,9 +24,7 @@ class MosqueActionButtons extends StatelessWidget {
             child: _PrimaryActionButton(
               icon: Icons.directions_rounded,
               label: StringsConstants.getDirections,
-              onTap: () {
-                // TODO: launch maps URL
-              },
+              onTap: () => _openDirections(context),
             ),
           ),
           SizedBox(width: 10.w),
@@ -56,6 +56,40 @@ class MosqueActionButtons extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _openDirections(BuildContext context) async {
+    final googleMapsUri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${mosque.latitude},${mosque.longitude}',
+    );
+    final nativeGoogleMapsUri = Theme.of(context).platform == TargetPlatform.iOS
+        ? Uri.parse(
+            'comgooglemaps://?daddr=${mosque.latitude},${mosque.longitude}&directionsmode=driving',
+          )
+        : Uri.parse('google.navigation:q=${mosque.latitude},${mosque.longitude}');
+
+    final launchedNative = await launchUrl(
+      nativeGoogleMapsUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (launchedNative) {
+      return;
+    }
+
+    final launchedWeb = await launchUrl(
+      googleMapsUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (launchedWeb) {
+      return;
+    }
+
+    if (context.mounted) {
+      snackBarMessage(
+        context: context,
+        text: StringsConstants.openMapsError,
+      );
+    }
+  }
 }
 
 class _PrimaryActionButton extends StatelessWidget {
@@ -77,7 +111,7 @@ class _PrimaryActionButton extends StatelessWidget {
         height: 50.h,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColor.primaryColor, Color(0xFF5BB8A8)],
+            colors: [AppColor.primaryContainer, AppColor.primaryColor],
           ),
           borderRadius: BorderRadius.circular(50.r),
           boxShadow: [
@@ -106,6 +140,7 @@ class _PrimaryActionButton extends StatelessWidget {
       ),
     );
   }
+
 }
 
 class _SecondaryActionButton extends StatelessWidget {

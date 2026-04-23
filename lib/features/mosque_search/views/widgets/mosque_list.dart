@@ -6,8 +6,13 @@ import 'mosque_list_header.dart';
 
 class MosqueList extends StatelessWidget {
   final List<MosqueModel> mosques;
+  final ValueChanged<MosqueModel> onMosqueTap;
 
-  const MosqueList({super.key, required this.mosques});
+  const MosqueList({
+    super.key,
+    required this.mosques,
+    required this.onMosqueTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +29,10 @@ class MosqueList extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 100.h),
             itemCount: mosques.length,
             separatorBuilder: (_, _) => SizedBox(height: 12.h),
-            itemBuilder: (_, i) => MosqueCard(mosque: mosques[i]),
+            itemBuilder: (_, i) => MosqueCard(
+              mosque: mosques[i],
+              onTap: () => onMosqueTap(mosques[i]),
+            ),
           ),
         ),
       ],

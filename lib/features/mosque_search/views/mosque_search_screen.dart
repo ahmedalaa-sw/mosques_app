@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/constants/app_strings.dart';
+import 'package:mosques_app/core/routing/routes.dart';
+import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_cubit.dart';
 import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_states.dart';
 import 'widgets/mosque_list.dart';
@@ -12,6 +14,10 @@ import 'widgets/mosque_status_message.dart';
 
 class MosqueSearchScreen extends StatelessWidget {
   const MosqueSearchScreen({super.key});
+
+  void _openMosqueDetails(BuildContext context, MosqueModel mosque) {
+    Navigator.of(context).pushNamed(Routes.mosqueDetails, arguments: mosque);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +60,11 @@ class MosqueSearchScreen extends StatelessWidget {
                     );
                   }
                   if (state is MosqueSearchSuccess) {
-                    return MosqueList(mosques: state.mosques);
+                    return MosqueList(
+                      mosques: state.mosques,
+                      onMosqueTap: (mosque) =>
+                          _openMosqueDetails(context, mosque),
+                    );
                   }
                   if (state is MosqueSearchError) {
                     return MosqueStatusMessage(
