@@ -43,52 +43,26 @@ class SunTimingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      // Merges label + time into a single accessible announcement,
-      // e.g. "Sunrise, 6:12 AM".
-      label: '$label, $time',
-      excludeSemantics: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: _cardFill,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Event label (e.g. "SUNRISE") ──────────────────────────────
-              Text(
-                label,
-                style: TextStyle(
-                  color: AppColor.textSecondary,
-                  fontSize: 10.sp,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 8.h),
-
-              // ── Sun icon ──────────────────────────────────────────────────
-              // Previously accepted via constructor but never rendered.
-              // Now displayed so the parameter is no longer dead code.
-              Icon(icon, color: AppColor.accentTeal, size: 20.sp),
-              SizedBox(height: 6.h),
-
-              // ── Time string (e.g. "6:12 AM") ──────────────────────────────
-              Text(
-                time,
-                style: TextStyle(
-                  color: AppColor.white,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColor.onSurfaceVariant,
+            fontSize: 10.sp,
+            letterSpacing: 1,
           ),
         ),
-      ),
+        SizedBox(height: 6.h),
+        Text(
+          time,
+          style: TextStyle(
+            color: AppColor.onSurface,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

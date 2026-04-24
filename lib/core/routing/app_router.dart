@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:mosques_app/core/routing/routes.dart';
-import 'package:mosques_app/features/bottom_nav_bar/screens/bottom_nav_bar_screen.dart';
+import 'package:mosques_app/features/bottom_nav/views/bottom_nav_screen.dart';
 import 'package:mosques_app/features/home/view/home_screen.dart';
 
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case Routes.homeScreen:
-        return _createRoute(HomeScreen());
+        return _createRoute(const HomeScreen());
       case Routes.searchScreen:
       // return _createRoute(SearchScreen());
       case Routes.favScreen:
       // return _createRoute(FavScreen());
-
       case Routes.more:
       // return _createRoute(MoreScreen());
-
-      case Routes.bottomNavScreen:
-      return _createRoute(BottomNavBarScreen());
       case Routes.mosqueDetails:
       // return _createRoute(MosqueDetailsScreen());
-
+      case Routes.bottomNavScreen:
+        return _createRoute(const BottomNavScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
