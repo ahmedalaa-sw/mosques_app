@@ -1,25 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/features/home/model/home_model.dart';
 
 class PrayerScheduleSection extends StatelessWidget {
-  const PrayerScheduleSection({super.key});
+  final List<PrayerModel>? prayers;
+  final double? latitude;
+  final double? longitude;
+  final String? methodName;
+
+  const PrayerScheduleSection({
+    super.key,
+    this.prayers,
+    this.latitude,
+    this.longitude,
+    this.methodName,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final prayers = [
-      {'name': 'Fajr', 'time': '05:22 AM', 'icon': Icons.wb_twilight},
-      {'name': 'Sunrise', 'time': '06:54 AM', 'icon': Icons.wb_sunny},
-      {
-        'name': 'Dhuhr',
-        'time': '01:12 PM',
-        'icon': Icons.wb_sunny,
-        'highlight': true,
-      },
-      {'name': 'Asr', 'time': '04:38 PM', 'icon': Icons.wb_sunny},
-      {'name': 'Maghrib', 'time': '07:22 PM', 'icon': Icons.wb_twilight},
-      {'name': 'Isha', 'time': '08:44 PM', 'icon': Icons.nights_stay},
-    ];
+    // Use provided prayers or fallback to default
+    final prayersList =
+        prayers ??
+        [
+          PrayerModel(name: 'Fajr', time: '05:22 AM', icon: Icons.wb_twilight),
+          PrayerModel(name: 'Sunrise', time: '06:54 AM', icon: Icons.wb_sunny),
+          PrayerModel(
+            name: 'Dhuhr',
+            time: '01:12 PM',
+            icon: Icons.wb_sunny,
+            isHighlighted: true,
+          ),
+          PrayerModel(name: 'Asr', time: '04:38 PM', icon: Icons.wb_sunny),
+          PrayerModel(
+            name: 'Maghrib',
+            time: '07:22 PM',
+            icon: Icons.wb_twilight,
+          ),
+          PrayerModel(name: 'Isha', time: '08:44 PM', icon: Icons.nights_stay),
+        ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,13 +46,29 @@ class PrayerScheduleSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Prayer Schedule',
-              style: TextStyle(
-                color: AppColor.white,
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w600,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Prayer Schedule',
+                  style: TextStyle(
+                    color: AppColor.white,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (methodName != null && methodName!.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(top: 4.h),
+                    child: Text(
+                      'Method: $methodName',
+                      style: TextStyle(
+                        color: AppColor.textSecondary,
+                        fontSize: 11.sp,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             TextButton(
               onPressed: () {},
@@ -52,17 +87,18 @@ class PrayerScheduleSection extends StatelessWidget {
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: prayers.length,
+          itemCount: prayersList.length,
           separatorBuilder: (context, index) => SizedBox(height: 8.h),
           itemBuilder: (context, index) {
-            final prayer = prayers[index];
-            final isHighlight = (prayer['highlight'] as bool?) ?? false;
+            final prayer = prayersList[index];
 
             return Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               decoration: BoxDecoration(
-                color: isHighlight ? AppColor.darkCard : AppColor.primaryColor,
-                border: isHighlight
+                color: prayer.isHighlighted
+                    ? AppColor.darkCard
+                    : AppColor.primaryColor,
+                border: prayer.isHighlighted
                     ? Border.all(color: AppColor.accentTeal, width: 1.5)
                     : null,
                 borderRadius: BorderRadius.circular(12.r),
@@ -70,8 +106,8 @@ class PrayerScheduleSection extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    prayer['icon'] as IconData,
-                    color: isHighlight
+                    prayer.icon,
+                    color: prayer.isHighlighted
                         ? AppColor.accentTeal
                         : AppColor.textSecondary,
                     size: 24.sp,
@@ -79,18 +115,19 @@ class PrayerScheduleSection extends StatelessWidget {
                   SizedBox(width: 16.w),
                   Expanded(
                     child: Text(
-                      prayer['name'] as String,
+                      prayer.name,
                       style: TextStyle(
-                        color:
-                            isHighlight ? AppColor.accentTeal : AppColor.white,
+                        color: prayer.isHighlighted
+                            ? AppColor.accentTeal
+                            : AppColor.white,
                         fontSize: 16.sp,
-                        fontWeight: isHighlight
+                        fontWeight: prayer.isHighlighted
                             ? FontWeight.w600
                             : FontWeight.w500,
                       ),
                     ),
                   ),
-                  if (isHighlight)
+                  if (prayer.isHighlighted)
                     Container(
                       width: 8.w,
                       height: 8.h,
@@ -101,10 +138,11 @@ class PrayerScheduleSection extends StatelessWidget {
                     ),
                   SizedBox(width: 8.w),
                   Text(
-                    prayer['time'] as String,
+                    prayer.time,
                     style: TextStyle(
-                      color:
-                          isHighlight ? AppColor.accentTeal : AppColor.white,
+                      color: prayer.isHighlighted
+                          ? AppColor.accentTeal
+                          : AppColor.white,
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                     ),
@@ -114,6 +152,40 @@ class PrayerScheduleSection extends StatelessWidget {
             );
           },
         ),
+        // Location info if available
+        if (latitude != null && longitude != null)
+          Padding(
+            padding: EdgeInsets.only(top: 16.h),
+            child: Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: AppColor.darkCard.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    color: AppColor.accentTeal,
+                    size: 16.sp,
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      'Lat: ${latitude!.toStringAsFixed(4)}, '
+                      'Lng: ${longitude!.toStringAsFixed(4)}',
+                      style: TextStyle(
+                        color: AppColor.textSecondary,
+                        fontSize: 11.sp,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
