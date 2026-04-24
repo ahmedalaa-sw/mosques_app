@@ -7,6 +7,7 @@ environment:
   sdk: ^3.8.0
 
 dependencies:
+  dartz: ^0.10.1
   dio: ^5.9.2
   flutter:
     sdk: flutter
@@ -15,8 +16,8 @@ dependencies:
   geolocator: ^14.0.2
   google_nav_bar: ^5.0.7
   hive_flutter: ^1.1.0
-  shared_preferences: ^2.3.2
   pretty_dio_logger: ^1.4.0
+  shared_preferences: ^2.3.2
   supabase_flutter: ^2.12.4
 
 dev_dependencies:

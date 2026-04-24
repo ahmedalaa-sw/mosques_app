@@ -72,5 +72,9 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need your location to show accurate prayer times.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to display prayer times based on your current location.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to your location to display prayer times based on your current location.</string>
 </dict>
 </plist>

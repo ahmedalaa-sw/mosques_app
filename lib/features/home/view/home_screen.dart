@@ -1,61 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/constants/app_strings.dart';
-import 'package:mosques_app/features/home/view/widgets/prayer_schedule_section.dart';
-import 'package:mosques_app/features/home/view/widgets/prayer_time_card.dart';
+import 'package:mosques_app/features/home/model/home_repo.dart';
+import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
+import 'package:mosques_app/features/home/view/widgets/home_prayer_view.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => HomeCubit(repository: HomeRepository())..loadPrayerTimes(),
+      child: Scaffold(
+        backgroundColor: AppColor.primaryColor,
+        appBar: const _HomeAppBar(),
+        body: const HomePrayerView(),
+      ),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  late Duration _remainingTime;
+class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _HomeAppBar();
 
   @override
-  void initState() {
-    super.initState();
-    _remainingTime = const Duration(minutes: 2, seconds: 45);
-  }
+  Size get preferredSize => Size.fromHeight(50.h);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColor.surfaceDim,
-      appBar: AppBar(
-        title: const Text(
-          AppStrings.appTitle,
-          style: TextStyle(
-            color: AppColor.primaryColor,
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColor.surface,
-        elevation: 0,
-        toolbarHeight: 50.h,
-        foregroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Column(
-            children: [
-              SizedBox(height: 20.h),
-              PrayerTimerCard(remainingTime: _remainingTime),
-              SizedBox(height: 30.h),
-              const PrayerScheduleSection(),
-              SizedBox(height: 20.h),
-            ],
-          ),
+    return AppBar(
+      automaticallyImplyLeading: false,
+      title: Text(
+        'Al-Masjid',
+        style: TextStyle(
+          color: AppColor.appBarTextColor,
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
         ),
       ),
+      centerTitle: true,
+      backgroundColor: AppColor.appBarColor,
+      elevation: 0,
+      toolbarHeight: 50.h,
+      actions: [
+        Padding(
+          padding: EdgeInsets.only(right: 16.w),
+          child: Center(
+            child: GestureDetector(
+              onTap: () => context.read<HomeCubit>().refreshPrayerTimes(),
+              child: Icon(
+                Icons.refresh,
+                color: AppColor.appBarTextColor,
+                size: 24.sp,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

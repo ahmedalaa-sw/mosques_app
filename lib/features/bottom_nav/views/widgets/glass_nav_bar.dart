@@ -86,7 +86,7 @@ class NavItemWidget extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: isActive
-              ? AppColor.primaryColor.withValues(alpha: 0.15)
+              ? AppColor.primaryColor1.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20.r),
         ),
@@ -100,7 +100,7 @@ class NavItemWidget extends StatelessWidget {
                 key: ValueKey(isActive),
                 size: 24.sp,
                 color: isActive
-                    ? AppColor.primaryColor
+                    ? AppColor.primaryColor1
                     : AppColor.onSurfaceVariant,
               ),
             ),
@@ -111,7 +111,7 @@ class NavItemWidget extends StatelessWidget {
                 fontSize: 10.sp,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 color: isActive
-                    ? AppColor.primaryColor
+                    ? AppColor.primaryColor1
                     : AppColor.onSurfaceVariant,
               ),
               child: Text(item.label),
