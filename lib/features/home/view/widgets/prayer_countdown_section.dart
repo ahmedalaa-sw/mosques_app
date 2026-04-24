@@ -7,31 +7,11 @@ import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_countdown_card.dart';
 import 'package:mosques_app/features/home/view/widgets/sun_timing_card.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _PrayerInfo  — lightweight value object used only within this file.
-// ─────────────────────────────────────────────────────────────────────────────
 class _PrayerInfo {
   final String name;
   final String time; // 24-hour "HH:MM"
   const _PrayerInfo(this.name, this.time);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PrayerCountdownSection  (Task C — countdown engine)
-//
-// Responsibilities:
-//  • Build an ordered list of prayers from AladhanPrayerTimesModel.
-//  • Determine which prayer is current and which comes next using wall-clock
-//    time (minute-resolution comparison).
-//  • Compute the exact seconds remaining until the next prayer, wrapping
-//    correctly across midnight (Isha → next-day Fajr).
-//  • Drive a Timer.periodic(1 second) that calls setState on every tick.
-//  • Re-sync when the parent delivers updated prayer times (didUpdateWidget).
-//  • Cancel the timer in dispose() to prevent memory leaks.
-//
-// Output: passes three derived strings + two display strings down to the
-// pure-display _PrayerCountdownCard — no logic leaks into the card.
-// ─────────────────────────────────────────────────────────────────────────────
 class PrayerCountdownSection extends StatefulWidget {
   final AladhanPrayerTimesModel prayerTimes;
 
@@ -46,10 +26,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
   Duration _remaining = Duration.zero;
   late _PrayerInfo _current;
   late _PrayerInfo _next;
-
-  // ── Ordered prayer list built from the model ──────────────────────────────
-  // Sunrise and Imsak are intentionally excluded — they are not canonical
-  // salah prayers and should not appear as "current" or "next" prayers.
   List<_PrayerInfo> get _prayers => [
         _PrayerInfo('Fajr', widget.prayerTimes.fajr),
         _PrayerInfo('Dhuhr', widget.prayerTimes.dhuhr),
@@ -57,18 +33,12 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
         _PrayerInfo('Maghrib', widget.prayerTimes.maghrib),
         _PrayerInfo('Isha', widget.prayerTimes.isha),
       ];
-
-  // ── "HH:MM" → total minutes since midnight ───────────────────────────────
   int _toMinutes(String t) {
     final parts = t.split(':');
     if (parts.length < 2) return 0;
     return (int.tryParse(parts[0]) ?? 0) * 60 + (int.tryParse(parts[1]) ?? 0);
   }
 
-  // ── Derive current / next prayer from wall-clock time ────────────────────
-  // Algorithm: iterate prayers in order; the last prayer whose start time
-  // is ≤ now is "current". The one after it is "next". If no prayer has
-  // started yet (pre-Fajr window), current = Isha (previous day), next = Fajr.
   void _computePrayers() {
     final prayers = _prayers;
     final now = DateTime.now();
@@ -83,15 +53,10 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
         next = prayers[(i + 1) % prayers.length];
       }
     }
-
-    // Pre-Fajr: no prayer has started yet today.
-    _current = current ?? prayers.last;  // Isha from yesterday
-    _next = next ?? prayers.first;       // today's Fajr
+    _current = current ?? prayers.last;  
+    _next = next ?? prayers.first;       
   }
 
-  // ── Compute exact seconds remaining until _next prayer ───────────────────
-  // Wraps across midnight: if nextSec < nowSec, the prayer is tomorrow
-  // (add 86 400 seconds = one full day).
   Duration _computeRemaining() {
     final now = DateTime.now();
     final nowSec = now.hour * 3600 + now.minute * 60 + now.second;
@@ -101,8 +66,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
     if (diffSec < 0) diffSec += 86400;
     return Duration(seconds: diffSec);
   }
-
-  // ── Timer callback — fires every second ──────────────────────────────────
   void _tick(Timer _) {
     if (!mounted) return;
     _computePrayers();
@@ -116,8 +79,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
     _remaining = _computeRemaining();
     _timer = Timer.periodic(const Duration(seconds: 1), _tick);
   }
-
-  // ── Re-sync without restarting the timer when prayer data refreshes ───────
   @override
   void didUpdateWidget(PrayerCountdownSection old) {
     super.didUpdateWidget(old);
@@ -133,10 +94,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
     _timer = null;
     super.dispose();
   }
-
-  // ── Formatters ────────────────────────────────────────────────────────────
-
-  /// "HH:MM" (24 h) → "h:MM AM/PM" (12 h, no leading zero on hour)
   String _to12Hour(String t) {
     final parts = t.split(':');
     if (parts.length < 2) return t;
@@ -147,8 +104,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
     if (h == 12) return '12:$m PM';
     return '${h - 12}:$m PM';
   }
-
-  /// Duration → "MM:SS" when < 1 hour, "H:MM:SS" when ≥ 1 hour.
   String _formatCountdown(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -160,7 +115,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── "NOW PRAYING" heading ────────────────────────────────────────────
         Text(
           'NOW PRAYING',
           style: TextStyle(
@@ -170,8 +124,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
           ),
         ),
         SizedBox(height: 12.h),
-
-        // ── Pure display card ────────────────────────────────────────────────
         PrayerCountdownCard(
           currentPrayerName: _current.name,
           nextPrayerName: _next.name,
@@ -179,8 +131,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
           formattedCountdown: _formatCountdown(_remaining),
         ),
         SizedBox(height: 40.h),
-
-        // ── Sunrise / Sunset row ─────────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [

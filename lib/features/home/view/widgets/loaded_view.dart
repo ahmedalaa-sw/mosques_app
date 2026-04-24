@@ -46,7 +46,7 @@ class LoadedView extends StatelessWidget {
               methodName: prayerTimes.methodName,
             ),
 
-            SizedBox(height: 23.h),
+            SizedBox(height: 100.h),
           ],
         ),
       ),

@@ -3,26 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PrayerScheduleSection
-//
-// Improvements over the original:
-//  • Fallback prayer list promoted to a static const — built once at class
-//    load time, never again on rebuild.
-//  • ListView.separated replaced with a Column + mapped widgets. shrinkWrap
-//    ListView inside a Column pays a double-layout cost; a Column with a
-//    fixed, small item count (≤ 6) is cheaper and avoids the extra layer.
-//  • Private sub-widgets (_SectionHeader, _PrayerRow, _LocationBadge)
-//    decompose the build method, each carrying a single responsibility and
-//    making the top-level build scannable at a glance.
-//  • Inline ternary color/style expressions centralised in _PrayerRowTheme —
-//    one place to update if AppColor tokens change.
-//  • Container replaced with DecoratedBox + Padding where no sizing is
-//    needed, reducing the widget tree depth.
-//  • _locationLabel getter computes the formatted string once per build
-//    rather than inline, keeping the widget tree expression clean.
-//  • Static const used on all decoration objects that don't depend on props.
-// ─────────────────────────────────────────────────────────────────────────────
 class PrayerScheduleSection extends StatelessWidget {
   final List<PrayerModel>? prayers;
   final double? latitude;
@@ -37,14 +17,18 @@ class PrayerScheduleSection extends StatelessWidget {
     this.methodName,
   });
 
-  // Fallback list — static const: built once, shared across all instances.
   static final List<PrayerModel> _fallbackPrayers = [
-    PrayerModel(name: 'Fajr',    time: '05:22 AM', icon: Icons.wb_twilight),
-     PrayerModel(name: 'Sunrise', time: '06:54 AM', icon: Icons.wb_sunny),
-     PrayerModel(name: 'Dhuhr',   time: '01:12 PM', icon: Icons.wb_sunny, isHighlighted: true),
-     PrayerModel(name: 'Asr',     time: '04:38 PM', icon: Icons.wb_sunny),
-     PrayerModel(name: 'Maghrib', time: '07:22 PM', icon: Icons.wb_twilight),
-     PrayerModel(name: 'Isha',    time: '08:44 PM', icon: Icons.nights_stay),
+    PrayerModel(name: 'Fajr', time: '05:22 AM', icon: Icons.wb_twilight),
+    PrayerModel(name: 'Sunrise', time: '06:54 AM', icon: Icons.wb_sunny),
+    PrayerModel(
+      name: 'Dhuhr',
+      time: '01:12 PM',
+      icon: Icons.wb_sunny,
+      isHighlighted: true,
+    ),
+    PrayerModel(name: 'Asr', time: '04:38 PM', icon: Icons.wb_sunny),
+    PrayerModel(name: 'Maghrib', time: '07:22 PM', icon: Icons.wb_twilight),
+    PrayerModel(name: 'Isha', time: '08:44 PM', icon: Icons.nights_stay),
   ];
 
   bool get _hasLocation => latitude != null && longitude != null;
@@ -60,20 +44,14 @@ class PrayerScheduleSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Header ──────────────────────────────────────────────────────────
         _SectionHeader(methodName: methodName),
         SizedBox(height: 12.h),
 
-        // ── Prayer rows ──────────────────────────────────────────────────────
-        // Deliberately a Column rather than a ListView: item count is always
-        // ≤ 6, the parent scroll view handles scrolling, and avoiding
-        // shrinkWrap ListView eliminates the double-layout pass.
         for (int i = 0; i < effectivePrayers.length; i++) ...[
           _PrayerRow(prayer: effectivePrayers[i]),
           if (i < effectivePrayers.length - 1) SizedBox(height: 8.h),
         ],
 
-        // ── Location badge ───────────────────────────────────────────────────
         if (_hasLocation) ...[
           SizedBox(height: 16.h),
           _LocationBadge(label: _locationLabel),
@@ -83,12 +61,6 @@ class PrayerScheduleSection extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _SectionHeader
-//
-// "Prayer Schedule" title + optional calculation method tag + "Full Month"
-// action. Extracted so the parent build method stays scannable.
-// ─────────────────────────────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final String? methodName;
 
@@ -99,7 +71,6 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Title + optional method sub-label
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,12 +99,9 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
 
-        // "Full Month" action — no-op placeholder preserved from original.
         TextButton(
           onPressed: () {},
           style: TextButton.styleFrom(
-            // Remove default horizontal padding so it visually aligns with
-            // the card edges.
             padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -150,14 +118,6 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _PrayerRowTheme
-//
-// Single source of truth for colors and weights that differ between a normal
-// row and a highlighted (currently active) row. Centralised here so that
-// changing a token requires editing exactly one place.
-// ─────────────────────────────────────────────────────────────────────────────
 class _PrayerRowTheme {
   final Color iconColor;
   final Color textColor;
@@ -176,30 +136,23 @@ class _PrayerRowTheme {
   });
 
   factory _PrayerRowTheme.normal() => _PrayerRowTheme(
-        iconColor: AppColor.textSecondary,
-        textColor: AppColor.white,
-        nameFontWeight: FontWeight.w500,
-        backgroundColor: AppColor.primaryColor,
-        showActiveDot: false,
-      );
+    iconColor: AppColor.textSecondary,
+    textColor: AppColor.white,
+    nameFontWeight: FontWeight.w500,
+    backgroundColor: AppColor.primaryColor,
+    showActiveDot: false,
+  );
 
   factory _PrayerRowTheme.highlighted() => _PrayerRowTheme(
-        iconColor: AppColor.accentTeal,
-        textColor: AppColor.accentTeal,
-        nameFontWeight: FontWeight.w600,
-        backgroundColor: AppColor.darkCard,
-        border: Border.all(color: AppColor.accentTeal, width: 1.5),
-        showActiveDot: true,
-      );
+    iconColor: AppColor.accentTeal,
+    textColor: AppColor.accentTeal,
+    nameFontWeight: FontWeight.w600,
+    backgroundColor: AppColor.darkCard,
+    border: Border.all(color: AppColor.accentTeal, width: 1.5),
+    showActiveDot: true,
+  );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _PrayerRow
-//
-// Renders one prayer entry. Uses _PrayerRowTheme to avoid repeating ternary
-// color expressions inline. DecoratedBox + Padding replaces Container since
-// no explicit sizing is required — fewer render objects, same result.
-// ─────────────────────────────────────────────────────────────────────────────
 class _PrayerRow extends StatelessWidget {
   final PrayerModel prayer;
 
@@ -221,11 +174,9 @@ class _PrayerRow extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
           children: [
-            // Prayer icon
             Icon(prayer.icon, color: theme.iconColor, size: 24.sp),
             SizedBox(width: 16.w),
 
-            // Prayer name
             Expanded(
               child: Text(
                 prayer.name,
@@ -237,13 +188,8 @@ class _PrayerRow extends StatelessWidget {
               ),
             ),
 
-            // Active dot — only visible for the highlighted prayer.
-            if (theme.showActiveDot) ...[
-              _ActiveDot(),
-              SizedBox(width: 8.w),
-            ],
+            if (theme.showActiveDot) ...[_ActiveDot(), SizedBox(width: 8.w)],
 
-            // Prayer time
             Text(
               prayer.time,
               style: TextStyle(
