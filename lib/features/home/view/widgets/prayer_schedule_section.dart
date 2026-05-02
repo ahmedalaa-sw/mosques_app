@@ -34,8 +34,8 @@ class PrayerScheduleSection extends StatelessWidget {
   bool get _hasLocation => latitude != null && longitude != null;
 
   String get _locationLabel =>
-      'Lat: ${latitude!.toStringAsFixed(4)},  '
-      'Lng: ${longitude!.toStringAsFixed(4)}';
+      'Lat: ${latitude!.toStringAsFixed(0)},  ' //was 4 and latitude instead of hardcoded
+      'Lng: ${longitude!.toStringAsFixed(0)}'; //was 4 insted of 0
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +118,7 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
+
 class _PrayerRowTheme {
   final Color iconColor;
   final Color textColor;

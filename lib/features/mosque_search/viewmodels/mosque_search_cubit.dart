@@ -22,9 +22,9 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   static const _kLocationThresholdMeters = AppConstants.locationThresholdMeters;
 
   MosqueSearchCubit()
-      : _locationService = LocationService(),
-        _repo = MosqueSearchRepo(),
-        super(MosqueSearchInitial());
+    : _locationService = LocationService(),
+      _repo = MosqueSearchRepo(),
+      super(MosqueSearchInitial());
 
   Future<void> loadMosques() async {
     try {
@@ -53,7 +53,9 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   }
 
   Future<List<MosqueModel>?> _tryLoadFromCache(Position pos) async {
-    debugPrint('🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}');
+    debugPrint(
+      '🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}',
+    );
 
     final [cachedLat, cachedLng] = await Future.wait([
       AppPreferences.getDouble(_kCachedLat),
@@ -74,7 +76,9 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       cachedLng,
     );
 
-    debugPrint('🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  (threshold: ${_kLocationThresholdMeters.toInt()} m)');
+    debugPrint(
+      '🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  (threshold: ${_kLocationThresholdMeters.toInt()} m)',
+    );
 
     if (distance >= _kLocationThresholdMeters) {
       debugPrint('❌ [Cache] MISS — moved too far, calling API');
@@ -88,7 +92,9 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     }
 
     final list = jsonDecode(json) as List<dynamic>;
-    debugPrint('✅ [Cache] HIT — loading ${list.length} mosques from cache, skipping API');
+    debugPrint(
+      '✅ [Cache] HIT — loading ${list.length} mosques from cache, skipping API',
+    );
     return list
         .map((e) => MosqueModel.fromCache(e as Map<String, dynamic>))
         .toList();
@@ -103,7 +109,9 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
         jsonEncode(mosques.map((m) => m.toJson()).toList()),
       ),
     ]);
-    debugPrint('💾 [Cache] Saved ${mosques.length} mosques at lat:${pos.latitude}, lng:${pos.longitude}');
+    debugPrint(
+      '💾 [Cache] Saved ${mosques.length} mosques at lat:${pos.latitude}, lng:${pos.longitude}',
+    );
   }
 
   void search(String query) {

@@ -1,17 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CenteredActionView  (Task F — shared layout base)
-//
-// Renders a centered column containing an icon, a title, a message, an
-// optional subtitle (used for HTTP status codes), and a retry button.
-//
-// Both PermissionDeniedView and ErrorView delegate here — all visual
-// differences are expressed through constructor parameters, eliminating
-// duplicated layout code across the two callers.
-// ─────────────────────────────────────────────────────────────────────────────
 class CenteredActionView extends StatelessWidget {
   final IconData icon;
   final Color iconColor;

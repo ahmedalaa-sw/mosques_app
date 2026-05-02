@@ -1,100 +1,72 @@
 import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
-import 'package:mosques_app/core/network/dio_helper.dart';
+import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/utils/geolocation_service.dart';
 import 'package:mosques_app/core/errors/failures.dart';
 import 'home_model.dart';
 
-/// Repository for handling prayer times data and location services
+/// Repository for offline prayer-time calculation using adhan_dart.
+/// Zero network calls — all computation happens on-device.
 class HomeRepository {
-  /// Fetch prayer times from Aladhan API based on user's geolocation
-  Future<Either<Failure, AladhanPrayerTimesModel>> getPrayerTimesForCurrentLocation() async {
-    try {
-      // Step 1: Get user's current location
-      final position = await GeolocationService.getCurrentLocation();
+  // ── Public API ─────────────────────────────────────────────────────────────
 
-      return await _fetchPrayerTimesFromApi(
-        position.latitude,
-        position.longitude,
-      );
+  /// Resolve device GPS position, then calculate today's prayer times.
+  Future<Either<Failure, AladhanPrayerTimesModel>>
+  getPrayerTimesForCurrentLocation() async {
+    try {
+      final position = await GeolocationService.getCurrentLocation();
+      return _calculate(position.latitude, position.longitude);
     } on LocationPermissionException catch (e) {
-      return Left(ServerFailure('Location permission error: ${e.message}', 403));
+      return Left(
+        ServerFailure('Location permission error: ${e.message}', 403),
+      );
     } catch (e) {
-      return Left(ServerFailure('Failed to get prayer times: $e', 500));
+      return Left(ServerFailure('Failed to get location: $e', 500));
     }
   }
 
-  Future<Either<Failure, AladhanPrayerTimesModel>> _fetchPrayerTimesFromApi(
+  /// Calculate prayer times for explicit [latitude] / [longitude] coordinates.
+  /// Useful for manual location entry — no GPS required.
+  Future<Either<Failure, AladhanPrayerTimesModel>> getPrayerTimesForLocation({
+    required double latitude,
+    required double longitude,
+  }) => _calculate(latitude, longitude);
+
+  Future<bool> hasLocationPermission() =>
+      GeolocationService.hasLocationPermission();
+
+  Future<bool> requestLocationPermission() =>
+      GeolocationService.requestLocationPermission();
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  Future<Either<Failure, AladhanPrayerTimesModel>> _calculate(
     double latitude,
     double longitude,
   ) async {
     try {
-      final apiUrl =
-          'https://api.aladhan.com/v1/timings/${DateTime.now().millisecondsSinceEpoch ~/ 1000}';
-
-      final response = await DioHelper.getData(
-        endpoint: apiUrl,
-        queryParameters: {
-          'latitude': latitude,
-          'longitude': longitude,
-          'method': 2, // Jafari method
-          'school': 0, // Shafi school
-          'adjustment': 0,
-        },
+      final prayerTimes = AdhanPrayerService.calculatePrayerTimes(
+        latitude: latitude,
+        longitude: longitude,
       );
-
-      if (response.statusCode != 200) {
-        return Left(ServerFailure(
-          'API returned status code ${response.statusCode}',
-          response.statusCode ?? 500,
-        ));
-      }
-
-      final data = response.data;
-      if (data == null || data is! Map<String, dynamic>) {
-        return Left(ServerFailure('Invalid API response format', 400));
-      }
-
-      if (data['code'] != 200) {
-        return Left(ServerFailure(
-          'API error: ${data['status'] ?? 'Unknown error'}',
-          data['code'] ?? 500,
-        ));
-      }
-
-      final prayerModel = AladhanPrayerTimesModel.fromJson(data['data']);
-      return Right(prayerModel);
-    } on DioException catch (e) {
-      return Left(ServerFailure(
-        'Network error: ${e.message ?? 'Unknown error'}',
-        e.response?.statusCode ?? 500,
-      ));
+      return Right(
+        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
+          prayerTimes: prayerTimes,
+          latitude: latitude,
+          longitude: longitude,
+          methodName: AdhanPrayerService.defaultMethodName,
+        ),
+      );
     } catch (e) {
-      return Left(ServerFailure('Failed to fetch prayer times: $e', 500));
+      return Left(ServerFailure('Prayer time calculation failed: $e', 500));
     }
-  }
-
-  Future<Either<Failure, AladhanPrayerTimesModel>> getPrayerTimesForLocation({
-    required double latitude,
-    required double longitude,
-  }) async {
-    return await _fetchPrayerTimesFromApi(latitude, longitude);
-  }
-
-  /// Check if location permission is already granted
-  Future<bool> hasLocationPermission() {
-    return GeolocationService.hasLocationPermission();
-  }
-
-  /// Request location permission
-  Future<bool> requestLocationPermission() {
-    return GeolocationService.requestLocationPermission();
   }
 }
 
+/// Thrown by [GeolocationService] when location permission is missing.
+/// Defined here so both the service and the repository share one import.
 class LocationPermissionException implements Exception {
   final String message;
-  LocationPermissionException(this.message);
+  const LocationPermissionException(this.message);
 
   @override
   String toString() => 'LocationPermissionException: $message';
