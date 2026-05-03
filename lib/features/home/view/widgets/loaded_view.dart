@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
+import 'package:mosques_app/features/home/view/widgets/digital_clock_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_countdown_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_schedule_section.dart';
 
@@ -32,6 +33,11 @@ class LoadedView extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(height: 23.h),
+
+            // ── Digital clock ────────────────────────────────────────────────
+            DigitalClockSection(),
+
+            SizedBox(height: 24.h),
 
             // ── Upper section: live countdown card ───────────────────────────
             PrayerCountdownSection(prayerTimes: prayerTimes),
