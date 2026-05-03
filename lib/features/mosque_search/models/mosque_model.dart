@@ -7,6 +7,7 @@ class MosqueModel {
   final String address;
   final double distanceMeters;
   final bool? isOpen;
+  final String statusLabel;
   final List<String> amenities;
   final double lat;
   final double lng;
@@ -18,6 +19,7 @@ class MosqueModel {
     required this.address,
     required this.distanceMeters,
     required this.isOpen,
+    required this.statusLabel,
     required this.amenities,
     required this.lat,
     required this.lng,
@@ -41,6 +43,7 @@ class MosqueModel {
         'address': address,
         'distanceMeters': distanceMeters,
         'isOpen': isOpen,
+        'statusLabel': statusLabel,
         'amenities': amenities,
         'lat': lat,
         'lng': lng,
@@ -48,12 +51,19 @@ class MosqueModel {
       };
 
   factory MosqueModel.fromCache(Map<String, dynamic> json) {
+    final isOpen = json['isOpen'] as bool?;
+    final cachedStatusLabel = json['statusLabel'] as String?;
+
     return MosqueModel(
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String,
       distanceMeters: (json['distanceMeters'] as num).toDouble(),
-      isOpen: json['isOpen'] as bool?,
+      isOpen: isOpen,
+      statusLabel: _cachedStatusLabel(
+        isOpen: isOpen,
+        cachedStatusLabel: cachedStatusLabel,
+      ),
       amenities: List<String>.from(json['amenities'] as List),
       lat: (json['lat'] as num).toDouble(),
       lng: (json['lng'] as num).toDouble(),
@@ -67,6 +77,8 @@ class MosqueModel {
   }) {
     final location = json['geometry']['location'] as Map<String, dynamic>;
     final openingHours = json['opening_hours'] as Map<String, dynamic>?;
+    final hasOpenNow = openingHours?.containsKey('open_now') ?? false;
+    final rawOpenStatus = openingHours?['open_now'];
     final photos = json['photos'] as List<dynamic>?;
     final types = (json['types'] as List<dynamic>? ?? [])
         .map((t) => t.toString())
@@ -80,7 +92,8 @@ class MosqueModel {
       name: json['name'] as String,
       address: json['vicinity'] as String? ?? '',
       distanceMeters: distanceMeters,
-      isOpen: openingHours?['open_now'] as bool?,
+      isOpen: _parseOpenStatus(rawOpenStatus),
+      statusLabel: _statusLabel(rawOpenStatus, hasOpenNow: hasOpenNow),
       amenities: types,
       lat: (location['lat'] as num).toDouble(),
       lng: (location['lng'] as num).toDouble(),
@@ -100,6 +113,33 @@ class MosqueModel {
     };
     return map[type];
   }
+
+  static bool? _parseOpenStatus(dynamic rawOpenStatus) {
+    return rawOpenStatus is bool ? rawOpenStatus : null;
+  }
+
+  static String _statusLabel(
+    dynamic rawOpenStatus, {
+    required bool hasOpenNow,
+  }) {
+    if (rawOpenStatus is bool) {
+      return rawOpenStatus ? AppStrings.statusOpen : AppStrings.statusClosed;
+    }
+    if (!hasOpenNow || rawOpenStatus == null) {
+      return AppStrings.statusNotFound;
+    }
+    return AppStrings.statusNotValid;
+  }
+
+  static String _cachedStatusLabel({
+    required bool? isOpen,
+    required String? cachedStatusLabel,
+  }) {
+    if (cachedStatusLabel != null && cachedStatusLabel.trim().isNotEmpty) {
+      return cachedStatusLabel;
+    }
+    if (isOpen == true) return AppStrings.statusOpen;
+    if (isOpen == false) return AppStrings.statusClosed;
+    return AppStrings.statusNotFound;
+  }
 }
-
-

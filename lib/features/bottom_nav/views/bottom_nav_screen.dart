@@ -5,12 +5,12 @@ import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_cubit.dart
 import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_states.dart';
 import 'package:mosques_app/features/bottom_nav/views/widgets/glass_nav_bar.dart';
 import 'package:mosques_app/features/bottom_nav/views/widgets/map_fab.dart';
+import 'package:mosques_app/features/favorite/viewmodels/favorite_cubit.dart';
 import 'package:mosques_app/features/favorite/views/favorite_screen.dart';
 import 'package:mosques_app/features/home/view/home_screen.dart';
 import 'package:mosques_app/features/more/views/more_screen.dart';
 import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_cubit.dart';
 import 'package:mosques_app/features/mosque_search/views/mosque_search_screen.dart';
-import 'package:mosques_app/features/prayer_times/views/prayer_times_screen.dart';
 
 class BottomNavScreen extends StatelessWidget {
   const BottomNavScreen({super.key});
@@ -28,6 +28,7 @@ class BottomNavScreen extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => BottomNavCubit()),
         BlocProvider(create: (_) => MosqueSearchCubit()..loadMosques()),
+        BlocProvider(create: (_) => FavoriteCubit()..loadFavorites()),
       ],
       child: BlocBuilder<BottomNavCubit, BottomNavState>(
         builder: (context, state) {
@@ -35,14 +36,11 @@ class BottomNavScreen extends StatelessWidget {
           return Scaffold(
             backgroundColor: AppColor.surfaceDim,
             extendBody: true,
-            floatingActionButton:
-                cubit.currentIndex == 1 ? const MapFab() : null,
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.endFloat,
-            body: IndexedStack(
-              index: cubit.currentIndex,
-              children: _screens,
-            ),
+            floatingActionButton: cubit.currentIndex == 1
+                ? const MapFab()
+                : null,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            body: IndexedStack(index: cubit.currentIndex, children: _screens),
             bottomNavigationBar: GlassNavBar(
               currentIndex: cubit.currentIndex,
               onTap: cubit.changeTab,
