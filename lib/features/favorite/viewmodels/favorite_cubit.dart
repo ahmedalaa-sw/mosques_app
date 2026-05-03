@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mosques_app/features/favorite/models/favorite_model.dart';
 import 'package:mosques_app/features/favorite/repo/favorite_repo.dart';
 
 import 'favorite_states.dart';
@@ -22,6 +23,11 @@ class FavoriteCubit extends Cubit<FavoriteState> {
         emit(FavoriteError(error.toString()));
       },
     );
+  }
+
+  Future<void> toggleFavorite(FavoriteModel favorite) async {
+    final isCurrentlyFavorite = await _repo.isFavorite(favorite.id);
+    await _repo.setFavorite(favorite, isFavorite: !isCurrentlyFavorite);
   }
 
   @override

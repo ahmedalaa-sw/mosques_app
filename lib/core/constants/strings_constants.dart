@@ -8,7 +8,7 @@ class StringsConstants {
 
   // ── Mosque Details ──
   static const String mosqueDetails = 'Mosque Details';
-  static const String openNow = 'Open Now';
+  static const String openNow = 'Open';
   static const String closedNow = 'Closed Now';
   static const String statusNotFound = 'Not Found';
   static const String statusNotValid = 'Status Not Valid';

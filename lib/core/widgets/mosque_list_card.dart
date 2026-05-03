@@ -10,6 +10,7 @@ class MosqueListCard extends StatelessWidget {
   final List<String> amenities;
   final String? imageUrl;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   const MosqueListCard({
     super.key,
@@ -20,6 +21,7 @@ class MosqueListCard extends StatelessWidget {
     required this.amenities,
     required this.onTap,
     this.imageUrl,
+    this.trailing,
   });
 
   @override
@@ -49,6 +51,10 @@ class MosqueListCard extends StatelessWidget {
                   amenities: amenities,
                 ),
               ),
+              if (trailing != null) ...[
+                SizedBox(width: 8.w),
+                trailing!,
+              ],
             ],
           ),
         ),

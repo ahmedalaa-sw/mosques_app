@@ -92,6 +92,16 @@ class FavoriteScreen extends StatelessWidget {
                               statusColor: _statusColor(favorite),
                               amenities: favorite.amenities,
                               imageUrl: favorite.photoUrl,
+                              trailing: IconButton(
+                                onPressed: () => context
+                                    .read<FavoriteCubit>()
+                                    .toggleFavorite(favorite),
+                                icon: Icon(
+                                  Icons.favorite_rounded,
+                                  color: AppColor.primaryColor,
+                                  size: 20.sp,
+                                ),
+                              ),
                               onTap: () => Navigator.of(context).pushNamed(
                                 Routes.mosqueDetails,
                                 arguments: favorite.toMosqueModel(),
