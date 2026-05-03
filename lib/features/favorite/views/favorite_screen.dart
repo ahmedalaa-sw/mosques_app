@@ -98,7 +98,7 @@ class FavoriteScreen extends StatelessWidget {
                                     .toggleFavorite(favorite),
                                 icon: Icon(
                                   Icons.favorite_rounded,
-                                  color: AppColor.primaryColor,
+                                  color: AppColor.secondaryColor,
                                   size: 20.sp,
                                 ),
                               ),
@@ -123,7 +123,7 @@ class FavoriteScreen extends StatelessWidget {
   }
 
   Color _statusColor(FavoriteModel favorite) {
-    if (favorite.isOpen == true) return AppColor.primaryColor;
+    if (favorite.isOpen == true) return AppColor.primaryColor1;
     if (favorite.isOpen == false) return AppColor.errorColor;
     if (favorite.statusLabel == AppStrings.statusNotValid) {
       return AppColor.secondaryColor;

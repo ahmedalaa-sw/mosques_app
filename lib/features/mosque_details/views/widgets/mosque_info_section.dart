@@ -62,7 +62,7 @@ class _StatusAndRatingRow extends StatelessWidget {
   }
 
   Color _statusColor() {
-    if (mosque.isOpenNow == true) return AppColor.primaryColor;
+    if (mosque.isOpenNow == true) return AppColor.primaryColor1;
     if (mosque.isOpenNow == false) return AppColor.errorColor;
     if (mosque.statusLabel == StringsConstants.statusNotValid) {
       return AppColor.secondaryColor;

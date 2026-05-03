@@ -24,7 +24,7 @@ class MosqueCard extends StatelessWidget {
   }
 
   Color _statusColor() {
-    if (mosque.isOpen == true) return AppColor.primaryColor;
+    if (mosque.isOpen == true) return AppColor.primaryColor1;
     if (mosque.isOpen == false) return AppColor.errorColor;
     if (mosque.statusLabel == AppStrings.statusNotValid) {
       return AppColor.secondaryColor;

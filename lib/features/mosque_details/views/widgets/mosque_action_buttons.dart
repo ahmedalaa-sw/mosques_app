@@ -111,7 +111,7 @@ class _PrimaryActionButton extends StatelessWidget {
         height: 50.h,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColor.primaryContainer, AppColor.primaryColor],
+            colors: [AppColor.primaryContainer, AppColor.primaryColor1],
           ),
           borderRadius: BorderRadius.circular(50.r),
           boxShadow: [
@@ -174,7 +174,7 @@ class _SecondaryActionButton extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 18.sp, color: AppColor.primaryColor),
+                Icon(icon, size: 18.sp, color: AppColor.primaryColor1),
                 SizedBox(height: 2.h),
                 Text(
                   label,
