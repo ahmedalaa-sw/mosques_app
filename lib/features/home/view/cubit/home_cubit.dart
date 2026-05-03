@@ -163,6 +163,6 @@ class HomeCubit extends Cubit<HomeState> {
       'Isha': _toDateTime(prayerTimes.isha),
     };
 
-    NotificationService.instance.schedulePrayerNotifications(prayers);
+    NotificationService.instance.scheduleNextPrayerNotification(prayers);
   }
 }

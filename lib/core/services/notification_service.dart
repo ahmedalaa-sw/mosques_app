@@ -8,7 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 ///
 /// Usage:
 /// 1. Call [init] once from main().
-/// 2. After prayer times load, call [schedulePrayerNotifications].
+/// 2. After prayer times load, call [scheduleNextPrayerNotification].
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -18,15 +18,14 @@ class NotificationService {
 
   bool _initialized = false;
 
-  // ── Android channel constants ─────────────────────────────────────────────
+  // ── Android notification channel ──────────────────────────────────────────
   static const _channelId = 'prayer_times_channel';
   static const _channelName = 'Prayer Times';
   static const _channelDesc =
-      'Notifies 15 minutes before each upcoming prayer';
+      'Notifies 15 minutes before the next prayer time';
 
-  // ── Notification ID range reserved for prayer alerts ─────────────────────
-  // IDs 100–105 map to: Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha
-  static const _baseId = 100;
+  // ── Fixed notification ID for the single "next prayer" alert ─────────────
+  static const _prayerNotificationId = 100;
 
   // ── Public API ────────────────────────────────────────────────────────────
 
@@ -70,11 +69,13 @@ class NotificationService {
     _initialized = true;
   }
 
-  /// Cancels all existing prayer alerts and schedules fresh 15-min-before
-  /// notifications for every prayer that is still in the future today.
+  /// Finds the **next** upcoming prayer from [prayers], and schedules a single
+  /// notification exactly 15 minutes before it.
+  ///
+  /// Any previously scheduled prayer notification is cancelled first.
   ///
   /// [prayers] maps prayer name (e.g. "Fajr") → local [DateTime] for today.
-  Future<void> schedulePrayerNotifications(
+  Future<void> scheduleNextPrayerNotification(
     Map<String, DateTime> prayers,
   ) async {
     if (!_initialized) {
@@ -82,65 +83,82 @@ class NotificationService {
       return;
     }
 
-    // Cancel previously scheduled prayer notifications.
-    for (int i = _baseId; i < _baseId + prayers.length + 1; i++) {
-      await _plugin.cancel(i);
-    }
+    // Always cancel the old notification first.
+    await _plugin.cancel(_prayerNotificationId);
 
-    final now = tz.TZDateTime.now(tz.local);
-    int id = _baseId;
+    final now = DateTime.now();
+
+    // ── Find the nearest future prayer ──────────────────────────────────
+    String? nextPrayerName;
+    DateTime? nextPrayerTime;
 
     for (final entry in prayers.entries) {
-      final prayerName = entry.key;
-      final prayerTime = entry.value;
-
-      // Convert plain DateTime to TZDateTime in device's local timezone.
-      final tzPrayerTime = tz.TZDateTime.local(
-        prayerTime.year,
-        prayerTime.month,
-        prayerTime.day,
-        prayerTime.hour,
-        prayerTime.minute,
-      );
-
-      // Notification fires 15 minutes before the prayer.
-      final notifyAt = tzPrayerTime.subtract(const Duration(minutes: 15));
-
-      // Skip if the notification window is already past.
-      if (notifyAt.isBefore(now)) {
-        id++;
-        continue;
+      if (entry.value.isAfter(now)) {
+        if (nextPrayerTime == null || entry.value.isBefore(nextPrayerTime)) {
+          nextPrayerName = entry.key;
+          nextPrayerTime = entry.value;
+        }
       }
-
-      await _plugin.zonedSchedule(
-        id,
-        '🕌 $prayerName in 15 minutes',
-        'Get ready — $prayerName starts at ${_fmt(prayerTime)}.',
-        notifyAt,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _channelId,
-            _channelName,
-            channelDescription: _channelDesc,
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
-
-      debugPrint(
-        '[NotificationService] Scheduled "$prayerName" alert at $notifyAt (id: $id)',
-      );
-
-      id++;
     }
+
+    // All prayers for today are in the past — nothing to schedule.
+    if (nextPrayerName == null || nextPrayerTime == null) {
+      debugPrint(
+        '[NotificationService] All prayers already passed — no notification scheduled',
+      );
+      return;
+    }
+
+    // Notification fires 15 minutes before the prayer.
+    final notifyAt = nextPrayerTime.subtract(const Duration(minutes: 15));
+
+    // If the 15-min window is already past, skip scheduling.
+    if (notifyAt.isBefore(now)) {
+      debugPrint(
+        '[NotificationService] 15-min window for $nextPrayerName already passed',
+      );
+      return;
+    }
+
+    // ── Convert to TZDateTime ──────────────────────────────────────────
+    final tzNotifyAt = tz.TZDateTime(
+      tz.local,
+      notifyAt.year,
+      notifyAt.month,
+      notifyAt.day,
+      notifyAt.hour,
+      notifyAt.minute,
+      notifyAt.second,
+    );
+
+    await _plugin.zonedSchedule(
+      _prayerNotificationId,
+      '🕌 $nextPrayerName prayer in 15 minutes',
+      'Get ready — $nextPrayerName starts at ${_fmt(nextPrayerTime)}.',
+      tzNotifyAt,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          channelDescription: _channelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+
+    debugPrint(
+      '[NotificationService] ✅ Scheduled "$nextPrayerName" alert at $tzNotifyAt',
+    );
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
