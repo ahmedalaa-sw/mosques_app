@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,48 +15,63 @@ class DigitalClockSection extends StatefulWidget {
 class _DigitalClockSectionState extends State<DigitalClockSection> {
   Timer? _timer;
 
-  String _formatTime(DateTime now, bool use24Hour) {
-    final h = now.hour;
-    final m = now.minute.toString().padLeft(2, '0');
-    final s = now.second.toString().padLeft(2, '0');
+  // Store the previous callback so we can restore it on dispose.
+  VoidCallback? _previousPlatformConfigCallback;
 
-    if (use24Hour) {
-      final hh = h.toString().padLeft(2, '0');
-      return '$hh:$m:$s';
-    }
+  @override
+  void initState() {
+    super.initState();
 
-    final period = h >= 12 ? 'PM' : 'AM';
-    final h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h);
-    return '$h12:$m:$s $period';
+    // ── Live listener for 12h/24h system toggle ──────────────────────────
+    // PlatformDispatcher fires this callback the moment the user flips the
+    // time-format setting in the phone's System Settings — no polling needed.
+    _previousPlatformConfigCallback =
+        PlatformDispatcher.instance.onPlatformConfigurationChanged;
+
+    PlatformDispatcher.instance.onPlatformConfigurationChanged = () {
+      // Forward to any previously registered handler (e.g. Flutter internals).
+      _previousPlatformConfigCallback?.call();
+      if (mounted) setState(() {});
+    };
+
+    // ── Per-second timer to advance the clock digits ──────────────────────
+    _timer = Timer.periodic(const Duration(seconds: 1), _tick);
+  }
+
+  @override
+  void dispose() {
+    // Restore the original callback to avoid breaking the framework.
+    PlatformDispatcher.instance.onPlatformConfigurationChanged =
+        _previousPlatformConfigCallback;
+    _timer?.cancel();
+    _timer = null;
+    super.dispose();
   }
 
   void _tick(Timer _) {
     if (mounted) setState(() {});
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), _tick);
-  }
+  String _formatTime(DateTime now) {
+    final use24Hour = PlatformDispatcher.instance.alwaysUse24HourFormat;
+    final h = now.hour;
+    final m = now.minute.toString().padLeft(2, '0');
+    final s = now.second.toString().padLeft(2, '0');
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _timer = null;
-    super.dispose();
+    if (use24Hour) {
+      return '${h.toString().padLeft(2, '0')}:$m:$s';
+    }
+
+    final h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h);
+    return '$h12:$m:$s';
   }
 
   @override
   Widget build(BuildContext context) {
-    final use24Hour = MediaQuery.of(context).alwaysUse24HourFormat;
-    final now = DateTime.now();
-    final timeText = _formatTime(now, use24Hour);
-
     return Column(
       children: [
         Text(
-          timeText,
+          _formatTime(DateTime.now()),
           style: TextStyle(
             color: AppColor.white,
             fontSize: 48.sp,

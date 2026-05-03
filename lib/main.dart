@@ -4,6 +4,7 @@ import 'package:hive_flutter/adapters.dart';
 // import 'package:mosques_app/core/network/supabase_service.dart';
 import 'core/network/dio_helper.dart';
 import 'core/routing/app_router.dart';
+import 'core/services/notification_service.dart';
 import 'app.dart';
 import 'app_bloc_observer.dart';
 
@@ -17,5 +18,9 @@ void main() async {
   Bloc.observer = AppBlocObserver();
   DioHelper.init();
 
+  // Initialize local notifications (requests permission on Android 13+).
+  await NotificationService.instance.init();
+
   runApp(MyApp(appRouter: AppRouter()));
 }
+
