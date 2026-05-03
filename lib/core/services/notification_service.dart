@@ -8,7 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 ///
 /// Usage:
 /// 1. Call [init] once from main().
-/// 2. After prayer times load, call [scheduleNextPrayerNotification].
+/// 2. After prayer times load, call [schedulePrayerNotifications].
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -22,12 +22,38 @@ class NotificationService {
   static const _channelId = 'prayer_times_channel';
   static const _channelName = 'Prayer Times';
   static const _channelDesc =
-      'Notifies 15 minutes before the next prayer time';
+      'Notifies 15 minutes before each prayer time';
 
-  // ── Fixed notification ID for the single "next prayer" alert ─────────────
-  static const _prayerNotificationId = 100;
+  // ── Notification IDs: 100 = Fajr, 101 = Sunrise, … 105 = Isha ───────────
+  static const _baseId = 100;
+  static const _maxPrayers = 6;
 
   // ── Public API ────────────────────────────────────────────────────────────
+
+  /// Shows an immediate test notification to verify push notifications work.
+  Future<void> showTestNotification() async {
+    await init();
+    await _plugin.show(
+      9999,
+      '🕌 Test Notification',
+      'Prayer notifications are working correctly!',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          channelDescription: _channelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+  }
 
   /// Initialise timezone data and the notifications plugin.
   /// Must be called once before any scheduling.
@@ -40,7 +66,6 @@ class NotificationService {
       final String locationName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(locationName));
     } catch (_) {
-      // Fall back to UTC if timezone lookup fails (e.g. in unit tests).
       tz.setLocalLocation(tz.UTC);
     }
 
@@ -69,95 +94,86 @@ class NotificationService {
     _initialized = true;
   }
 
-  /// Finds the **next** upcoming prayer from [prayers], and schedules a single
-  /// notification exactly 15 minutes before it.
-  ///
-  /// Any previously scheduled prayer notification is cancelled first.
+  /// Cancels all previous prayer notifications, then schedules a notification
+  /// **15 minutes before every remaining prayer** for today.
   ///
   /// [prayers] maps prayer name (e.g. "Fajr") → local [DateTime] for today.
-  Future<void> scheduleNextPrayerNotification(
+  Future<void> schedulePrayerNotifications(
     Map<String, DateTime> prayers,
   ) async {
     if (!_initialized) {
-      debugPrint('[NotificationService] Not initialized — skipping scheduling');
+      debugPrint('[NotificationService] Not initialized — skipping');
       return;
     }
 
-    // Always cancel the old notification first.
-    await _plugin.cancel(_prayerNotificationId);
+    // Cancel all previously scheduled prayer notifications.
+    for (int i = _baseId; i < _baseId + _maxPrayers; i++) {
+      await _plugin.cancel(i);
+    }
 
     final now = DateTime.now();
-
-    // ── Find the nearest future prayer ──────────────────────────────────
-    String? nextPrayerName;
-    DateTime? nextPrayerTime;
+    int id = _baseId;
+    int scheduled = 0;
 
     for (final entry in prayers.entries) {
-      if (entry.value.isAfter(now)) {
-        if (nextPrayerTime == null || entry.value.isBefore(nextPrayerTime)) {
-          nextPrayerName = entry.key;
-          nextPrayerTime = entry.value;
-        }
+      final prayerName = entry.key;
+      final prayerTime = entry.value;
+
+      // Notification should fire 15 minutes before the prayer.
+      final notifyAt = prayerTime.subtract(const Duration(minutes: 15));
+
+      // Skip if the 15-min mark has already passed.
+      if (notifyAt.isBefore(now)) {
+        id++;
+        continue;
       }
-    }
 
-    // All prayers for today are in the past — nothing to schedule.
-    if (nextPrayerName == null || nextPrayerTime == null) {
-      debugPrint(
-        '[NotificationService] All prayers already passed — no notification scheduled',
+      // Convert to TZDateTime for zonedSchedule.
+      final tzNotifyAt = tz.TZDateTime(
+        tz.local,
+        notifyAt.year,
+        notifyAt.month,
+        notifyAt.day,
+        notifyAt.hour,
+        notifyAt.minute,
+        notifyAt.second,
       );
-      return;
-    }
 
-    // Notification fires 15 minutes before the prayer.
-    final notifyAt = nextPrayerTime.subtract(const Duration(minutes: 15));
-
-    // If the 15-min window is already past, skip scheduling.
-    if (notifyAt.isBefore(now)) {
-      debugPrint(
-        '[NotificationService] 15-min window for $nextPrayerName already passed',
+      await _plugin.zonedSchedule(
+        id,
+        '🕌 $prayerName prayer in 15 minutes',
+        'Get ready — $prayerName starts at ${_fmt(prayerTime)}.',
+        tzNotifyAt,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            _channelName,
+            channelDescription: _channelDesc,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
-      return;
+
+      debugPrint(
+        '[NotificationService] ✅ Scheduled "$prayerName" alert at $tzNotifyAt (id: $id)',
+      );
+
+      scheduled++;
+      id++;
     }
-
-    // ── Convert to TZDateTime ──────────────────────────────────────────
-    final tzNotifyAt = tz.TZDateTime(
-      tz.local,
-      notifyAt.year,
-      notifyAt.month,
-      notifyAt.day,
-      notifyAt.hour,
-      notifyAt.minute,
-      notifyAt.second,
-    );
-
-    await _plugin.zonedSchedule(
-      _prayerNotificationId,
-      '🕌 $nextPrayerName prayer in 15 minutes',
-      'Get ready — $nextPrayerName starts at ${_fmt(nextPrayerTime)}.',
-      tzNotifyAt,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          channelDescription: _channelDesc,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
 
     debugPrint(
-      '[NotificationService] ✅ Scheduled "$nextPrayerName" alert at $tzNotifyAt',
+      '[NotificationService] Total scheduled: $scheduled / ${prayers.length}',
     );
   }
 

@@ -23,4 +23,3 @@ void main() async {
 
   runApp(MyApp(appRouter: AppRouter()));
 }
-

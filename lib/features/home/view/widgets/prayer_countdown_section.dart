@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/core/cubit/time_format_cubit.dart';
+import 'package:mosques_app/core/extensions/time_format_helper.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_countdown_card.dart';
 import 'package:mosques_app/features/home/view/widgets/sun_timing_card.dart';
@@ -94,16 +97,6 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
     _timer = null;
     super.dispose();
   }
-  String _to12Hour(String t) {
-    final parts = t.split(':');
-    if (parts.length < 2) return t;
-    final h = int.tryParse(parts[0]) ?? 0;
-    final m = parts[1];
-    if (h == 0) return '12:$m AM';
-    if (h < 12) return '$h:$m AM';
-    if (h == 12) return '12:$m PM';
-    return '${h - 12}:$m PM';
-  }
   String _formatCountdown(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -113,6 +106,7 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
 
   @override
   Widget build(BuildContext context) {
+    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
     return Column(
       children: [
         Text(
@@ -136,12 +130,12 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
           children: [
             SunTimingCard(
               label: 'SUNRISE',
-              time: _to12Hour(widget.prayerTimes.sunrise),
+              time: TimeFormatHelper.format(widget.prayerTimes.sunrise, use24Hour),
               icon: Icons.wb_sunny,
             ),
             SunTimingCard(
               label: 'SUNSET',
-              time: _to12Hour(widget.prayerTimes.maghrib),
+              time: TimeFormatHelper.format(widget.prayerTimes.maghrib, use24Hour),
               icon: Icons.wb_sunny_outlined,
             ),
           ],
