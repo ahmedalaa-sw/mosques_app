@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -13,6 +15,8 @@ void main() async {
   Bloc.observer = AppBlocObserver();
   DioHelper.init();
   await NotificationService.instance.init();
-
+  log("Date time now : ${DateTime.now()}");
+  log(DateTime.now().timeZoneName);
+  log(DateTime.now().timeZoneOffset.toString());
   runApp(MyApp(appRouter: AppRouter()));
 }

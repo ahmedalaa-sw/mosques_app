@@ -32,10 +32,10 @@ class LoadedView extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Column(
           children: [
-            SizedBox(height: 23.h),
+            // SizedBox(height: 23.h),
 
-            // ── Digital clock ────────────────────────────────────────────────
-            DigitalClockSection(),
+            // // ── Digital clock ────────────────────────────────────────────────
+            // DigitalClockSection(),
 
             SizedBox(height: 24.h),
 

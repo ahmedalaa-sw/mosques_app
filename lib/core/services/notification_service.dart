@@ -26,6 +26,7 @@ class NotificationService {
 
   // ── Notification IDs: 100 = Fajr, 101 = Sunrise, … 105 = Isha ───────────
   static const _baseId = 100;
+  static const _atPrayerBaseId = 200;
   static const _maxPrayers = 6;
 
   // ── Public API ────────────────────────────────────────────────────────────
@@ -110,6 +111,9 @@ class NotificationService {
     for (int i = _baseId; i < _baseId + _maxPrayers; i++) {
       await _plugin.cancel(i);
     }
+    for (int i = _atPrayerBaseId; i < _atPrayerBaseId + _maxPrayers; i++) {
+      await _plugin.cancel(i);
+    }
 
     final now = DateTime.now();
     int id = _baseId;
@@ -170,6 +174,59 @@ class NotificationService {
 
       scheduled++;
       id++;
+    }
+
+    // ── At-prayer-time notifications (IDs 200–205) ───────────────────────
+    int atPrayerId = _atPrayerBaseId;
+    for (final entry in prayers.entries) {
+      final prayerName = entry.key;
+      final prayerTime = entry.value;
+
+      if (prayerTime.isBefore(now)) {
+        atPrayerId++;
+        continue;
+      }
+
+      final tzPrayerAt = tz.TZDateTime(
+        tz.local,
+        prayerTime.year,
+        prayerTime.month,
+        prayerTime.day,
+        prayerTime.hour,
+        prayerTime.minute,
+        prayerTime.second,
+      );
+
+      await _plugin.zonedSchedule(
+        atPrayerId,
+        '🕌 $prayerName prayer time now',
+        'It\'s time for $prayerName prayer.',
+        tzPrayerAt,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            _channelName,
+            channelDescription: _channelDesc,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+
+      debugPrint(
+        '[NotificationService] ✅ Scheduled "$prayerName" at-prayer alert at $tzPrayerAt (id: $atPrayerId)',
+      );
+
+      atPrayerId++;
     }
 
     debugPrint(
