@@ -50,8 +50,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           padding: EdgeInsets.only(right: 8.w),
           child: Center(
             child: GestureDetector(
-              onTap: () =>
-                  NotificationService.instance.showTestNotification(),
+              onTap: () => NotificationService.instance.showTestNotification(),
               child: Icon(
                 Icons.notifications_active_outlined,
                 color: AppColor.appBarTextColor,

@@ -7,7 +7,6 @@ import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/cubit/time_format_cubit.dart';
 import 'package:mosques_app/core/extensions/time_format_helper.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
-import 'package:mosques_app/features/home/view/widgets/prayer_alert_banner.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_countdown_card.dart';
 import 'package:mosques_app/features/home/view/widgets/sun_timing_card.dart';
 
@@ -109,20 +108,8 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
   Widget build(BuildContext context) {
     final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
 
-    // Show the alert banner when ≤ 15 minutes remain until the next prayer.
-    final bool showAlert =
-        _remaining.inMinutes <= 15 && _remaining.inSeconds > 0;
-
     return Column(
       children: [
-        // ── 15-minute prayer alert banner ──────────────────────────────────
-        AnimatedPrayerAlertBanner(
-          isVisible: showAlert,
-          prayerName: _next.name,
-          remaining: _remaining,
-          formattedCountdown: _formatCountdown(_remaining),
-        ),
-
         Text(
           'NOW PRAYING',
           style: TextStyle(

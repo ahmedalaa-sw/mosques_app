@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
+import 'package:mosques_app/core/services/background_reschedule_service.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
@@ -51,6 +52,10 @@ class HomeCubit extends Cubit<HomeState> {
           final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
           emit(HomeLoaded(prayerTimes: prayerTimes, prayers: prayers));
           _scheduleNotifications(prayerTimes);
+          BackgroundRescheduleService.cacheLastLocation(
+            prayerTimes.latitude,
+            prayerTimes.longitude,
+          );
         },
       );
     } catch (e) {
@@ -87,6 +92,10 @@ class HomeCubit extends Cubit<HomeState> {
           final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
           emit(HomeLoaded(prayerTimes: prayerTimes, prayers: prayers));
           _scheduleNotifications(prayerTimes);
+          BackgroundRescheduleService.cacheLastLocation(
+            prayerTimes.latitude,
+            prayerTimes.longitude,
+          );
         },
       );
     } catch (e) {
