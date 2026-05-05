@@ -46,19 +46,19 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       toolbarHeight: 50.h,
       actions: [
-        Padding(
-          padding: EdgeInsets.only(right: 8.w),
-          child: Center(
-            child: GestureDetector(
-              onTap: () => NotificationService.instance.showTestNotification(),
-              child: Icon(
-                Icons.notifications_active_outlined,
-                color: AppColor.appBarTextColor,
-                size: 22.sp,
-              ),
-            ),
-          ),
-        ),
+        // Padding(
+        //   padding: EdgeInsets.only(right: 8.w),
+        //   child: Center(
+        //     child: GestureDetector(
+        //       onTap: () => NotificationService.instance.showTestNotification(),
+        //       child: Icon(
+        //         Icons.notifications_active_outlined,
+        //         color: AppColor.appBarTextColor,
+        //         size: 22.sp,
+        //       ),
+        //     ),
+        //   ),
+        // ),
         Padding(
           padding: EdgeInsets.only(right: 16.w),
           child: Center(
