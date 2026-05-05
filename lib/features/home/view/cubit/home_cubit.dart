@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
+import 'package:mosques_app/core/services/background_reschedule_service.dart';
+import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
 import 'home_state.dart';
@@ -49,6 +51,11 @@ class HomeCubit extends Cubit<HomeState> {
           final currentPrayer = _getCurrentPrayerName(prayerTimes);
           final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
           emit(HomeLoaded(prayerTimes: prayerTimes, prayers: prayers));
+          _scheduleNotifications(prayerTimes);
+          BackgroundRescheduleService.cacheLastLocation(
+            prayerTimes.latitude,
+            prayerTimes.longitude,
+          );
         },
       );
     } catch (e) {
@@ -84,6 +91,11 @@ class HomeCubit extends Cubit<HomeState> {
           final currentPrayer = _getCurrentPrayerName(prayerTimes);
           final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
           emit(HomeLoaded(prayerTimes: prayerTimes, prayers: prayers));
+          _scheduleNotifications(prayerTimes);
+          BackgroundRescheduleService.cacheLastLocation(
+            prayerTimes.latitude,
+            prayerTimes.longitude,
+          );
         },
       );
     } catch (e) {
@@ -137,5 +149,29 @@ class HomeCubit extends Cubit<HomeState> {
     final h = int.tryParse(parts[0]) ?? 0;
     final m = int.tryParse(parts[1]) ?? 0;
     return h * 60 + m;
+  }
+
+  /// Convert prayer time strings to today's DateTimes and hand them to the
+  /// [NotificationService] for 15-min-before scheduling.
+  void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) {
+    final today = DateTime.now();
+
+    DateTime _toDateTime(String hhmm) {
+      final parts = hhmm.split(':');
+      final h = int.tryParse(parts[0]) ?? 0;
+      final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+      return DateTime(today.year, today.month, today.day, h, m);
+    }
+
+    final prayers = <String, DateTime>{
+      'Fajr': _toDateTime(prayerTimes.fajr),
+      'Sunrise': _toDateTime(prayerTimes.sunrise),
+      'Dhuhr': _toDateTime(prayerTimes.dhuhr),
+      'Asr': _toDateTime(prayerTimes.asr),
+      'Maghrib': _toDateTime(prayerTimes.maghrib),
+      'Isha': _toDateTime(prayerTimes.isha),
+    };
+
+    NotificationService.instance.schedulePrayerNotifications(prayers);
   }
 }

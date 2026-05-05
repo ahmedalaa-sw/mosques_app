@@ -1,8 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/strings_constants.dart';
+import '../../../../core/cubit/time_format_cubit.dart';
+import '../../../../core/extensions/time_format_helper.dart';
 
 class PrayerTimesCard extends StatelessWidget {
   final Map<String, String> prayerTimes;
@@ -119,6 +122,7 @@ class _PrayerTimeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
     return Row(
       children: [
         Icon(icon, size: 18.sp, color: AppColor.primaryColor.withValues(alpha: 0.7)),
@@ -133,7 +137,7 @@ class _PrayerTimeRow extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          time,
+          TimeFormatHelper.format(time, use24Hour),
           style: TextStyle(
             fontSize: 15.sp,
             fontWeight: FontWeight.w700,
