@@ -1,20 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 
-/// Shared location service used by MosqueSearchCubit.
-///
-/// Place at: lib/core/services/location_service.dart
-///
-/// This is a separate class from GeolocationService (used by the home feature).
-/// MosqueSearchCubit instantiates LocationService directly as an instance
-/// (not a static class), so we keep it as a normal class with instance methods.
 class LocationService {
-  /// Returns the device's current [Position].
-  ///
-  /// Handles all permission and service-enabled checks internally.
-  /// Throws a plain [Exception] with a clear message on any failure so
-  /// MosqueSearchCubit can catch it and emit MosqueSearchError.
   Future<Position> getCurrentLocation() async {
-    // 1. Check if GPS / network location is switched on
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception(
@@ -23,10 +10,8 @@ class LocationService {
       );
     }
 
-    // 2. Check current permission status
     LocationPermission permission = await Geolocator.checkPermission();
 
-    // 3. Request if not yet decided
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -37,7 +22,6 @@ class LocationService {
       }
     }
 
-    // 4. Permanently denied — must go to system settings
     if (permission == LocationPermission.deniedForever) {
       throw Exception(
         'Location permission is permanently denied. '
@@ -45,10 +29,51 @@ class LocationService {
       );
     }
 
-    // 5. Permission granted — get the position
     return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.medium,
-      timeLimit: const Duration(seconds: 15),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 15),
+      ),
     );
+  }
+
+  /// Returns a continuous position stream filtered at the OS level.
+  ///
+  /// [distanceFilter] — minimum metres the device must move before the OS
+  /// emits a new position (saves battery). The app-level threshold check in
+  /// [MosqueSearchCubit] is separate and coarser.
+  Stream<Position> getPositionStream({int distanceFilter = 50}) {
+    return Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: distanceFilter,
+      ),
+    );
+  }
+
+  static Future<bool> hasPermission() async {
+    try {
+      final p = await Geolocator.checkPermission();
+      return p == LocationPermission.whileInUse || p == LocationPermission.always;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> requestPermission() async {
+    try {
+      final p = await Geolocator.requestPermission();
+      return p == LocationPermission.whileInUse || p == LocationPermission.always;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> openSettings() async {
+    try {
+      return await Geolocator.openLocationSettings();
+    } catch (_) {
+      return false;
+    }
   }
 }

@@ -27,7 +27,7 @@ class BottomNavScreen extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => BottomNavCubit()),
-        BlocProvider(create: (_) => MosqueSearchCubit()..loadMosques()),
+        BlocProvider(create: (_) => MosqueSearchCubit()..startTracking()),
         BlocProvider(create: (_) => FavoriteCubit()..loadFavorites()),
       ],
       child: BlocBuilder<BottomNavCubit, BottomNavState>(
