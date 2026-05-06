@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/core/cubit/time_format_cubit.dart';
+import 'package:mosques_app/core/extensions/time_format_helper.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 
 class PrayerScheduleSection extends StatelessWidget {
@@ -161,6 +164,8 @@ class _PrayerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
+    final formattedTime = TimeFormatHelper.format(prayer.time, use24Hour);
     final theme = prayer.isHighlighted
         ? _PrayerRowTheme.highlighted()
         : _PrayerRowTheme.normal();
@@ -192,7 +197,7 @@ class _PrayerRow extends StatelessWidget {
             if (theme.showActiveDot) ...[_ActiveDot(), SizedBox(width: 8.w)],
 
             Text(
-              prayer.time,
+              formattedTime,
               style: TextStyle(
                 color: theme.textColor,
                 fontSize: 14.sp,

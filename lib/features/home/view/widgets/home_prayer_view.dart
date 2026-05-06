@@ -7,12 +7,6 @@ import 'package:mosques_app/features/home/view/widgets/loading_view.dart';
 import 'package:mosques_app/features/home/view/widgets/error_view.dart';
 import 'package:mosques_app/features/home/view/widgets/permission_denied_view.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HomePrayerView  (Task B — state router)
-//
-// Single BlocBuilder that maps every HomeState subtype to its dedicated view.
-// Contains zero layout code — routing only.
-// ─────────────────────────────────────────────────────────────────────────────
 class HomePrayerView extends StatelessWidget {
   const HomePrayerView({super.key});
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_search/arabic_search.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -115,16 +116,17 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   }
 
   void search(String query) {
-    if (query.trim().isEmpty) {
+    final trimmedQuery = query.trim();
+    if (trimmedQuery.isEmpty) {
       emit(MosqueSearchSuccess(_all));
       return;
     }
-    final q = query.toLowerCase();
+
     final filtered = _all
         .where(
           (m) =>
-              m.name.toLowerCase().contains(q) ||
-              m.address.toLowerCase().contains(q),
+              ArabicText.containsNormalized(m.name, trimmedQuery) ||
+              ArabicText.containsNormalized(m.address, trimmedQuery),
         )
         .toList();
     emit(MosqueSearchSuccess(filtered));

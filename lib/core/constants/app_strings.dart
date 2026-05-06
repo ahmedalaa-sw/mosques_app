@@ -10,6 +10,8 @@ class AppStrings {
   // Mosque status badges
   static const statusOpen = 'OPEN';
   static const statusClosed = 'CLOSED';
+  static const statusNotFound = 'NOT FOUND';
+  static const statusNotValid = 'STATUS NOT VALID';
 
   // Amenity display names (mapped from Google Places types)
   static const amenityParking = 'Parking';
