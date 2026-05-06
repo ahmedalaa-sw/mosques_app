@@ -1,39 +1,32 @@
 import 'package:adhan_dart/adhan_dart.dart';
+import 'package:mosques_app/features/home/model/prayer_method_mapper.dart';
+import '../utils/location_utils.dart';
 
-/// Offline prayer-time calculation service using adhan_dart.
-/// Place at: lib/core/services/adhan_prayer_service.dart
 class AdhanPrayerService {
   AdhanPrayerService._();
-
-  static const String defaultMethodName = 'Muslim World League';
-
-  static PrayerTimes calculatePrayerTimes({
+  
+  // ✅ تعريف المتغير الثابت
+  static const String defaultMethodName = 'AdhanCalculation';
+  
+  static Future<PrayerTimes> calculatePrayerTime({
     required double latitude,
     required double longitude,
-    CalculationParameters? params,
-  }) {
+  }) async {
     final coordinates = Coordinates(latitude, longitude);
 
-    // ── CORRECT adhan_dart API (confirmed from official README + changelog) ─
-    //
-    // The class is CalculationMethodParameters — NOT CalculationMethod.
-    // The method is muslimWorldLeague()             — lowercase camelCase.
-    // The madhab is Madhab.shafi                   — lowercase.
-    //
-    // CalculationMethod.MuslimWorldLeague() does NOT exist in adhan_dart.
-    // CalculationMethod.muslimWorldLeague() does NOT exist in adhan_dart.
-    // CalculationMethodParameters.muslimWorldLeague() is the correct call.
-    //
-    // Changelog v1.1.0: "fixed some static methods naming convention"
-    // ───────────────────────────────────────────────────────────────────────
-    final calculationParams =
-        params ?? CalculationMethodParameters.muslimWorldLeague();
-    calculationParams.madhab = Madhab.hanafi;
+    /// 🌍 هات الدولة (cached بعد أول مرة)
+    final countryCode = await LocationUtils.getCountryCode(latitude, longitude);
+
+    /// 🧠 اختار method الصح
+    final params = PrayerMethodMapper.fromCountry(countryCode);
+
+    /// ⚖️ Madhab
+    params.madhab = Madhab.shafi;
 
     return PrayerTimes(
       coordinates: coordinates,
       date: DateTime.now(),
-      calculationParameters: calculationParams,
+      calculationParameters: params,
       precision: true,
     );
   }

@@ -25,8 +25,6 @@ class AladhanPrayerTimesModel {
   final String asr;
   final String maghrib;
   final String isha;
-  // final String imsak;
-  // final String midnight;
   final double latitude;
   final double longitude;
   final DateTime date;
@@ -39,8 +37,6 @@ class AladhanPrayerTimesModel {
     required this.asr,
     required this.maghrib,
     required this.isha,
-    // required this.imsak,
-    // required this.midnight,
     required this.latitude,
     required this.longitude,
     required this.date,
@@ -51,28 +47,26 @@ class AladhanPrayerTimesModel {
     required PrayerTimes prayerTimes,
     required double latitude,
     required double longitude,
-    String methodName = AdhanPrayerService.defaultMethodName,
+    String? methodName,
   }) {
+    // ✅ تعريف المتغير واستخدام القيمة الافتراضية إذا لم يتم تمرير methodName
+    final finalMethodName = methodName ?? AdhanPrayerService.defaultMethodName;
+
+    print('Raw Fajr (UTC offset): ${prayerTimes.fajr}');
+    print('Raw Fajr hour: ${prayerTimes.fajr?.hour}');
+    print('Local timezone offset: ${DateTime.now().timeZoneOffset}');
+
     return AladhanPrayerTimesModel(
-      // ── KEY FIX ────────────────────────────────────────────────────────────
-      // adhan_dart returns all times as UTC DateTimes.
-      // _fmt() calls .toLocal() on each one before extracting hour/minute.
-      // Without this the displayed times are in UTC which is wrong for
-      // anyone not in the UTC+0 timezone (e.g. Kuwait is UTC+3, so every
-      // prayer would show 3 hours too early without this conversion).
-      // ───────────────────────────────────────────────────────────────────────
       fajr: _fmt(prayerTimes.fajr),
       sunrise: _fmt(prayerTimes.sunrise),
       dhuhr: _fmt(prayerTimes.dhuhr),
       asr: _fmt(prayerTimes.asr),
       maghrib: _fmt(prayerTimes.maghrib),
       isha: _fmt(prayerTimes.isha),
-      // imsak: _fmt(prayerTimes.imsak),
-      // midnight: _fmt(prayerTimes.midnight),
       latitude: latitude,
       longitude: longitude,
       date: DateTime.now(),
-      methodName: methodName,
+      methodName: finalMethodName,
     );
   }
 

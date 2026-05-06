@@ -14,7 +14,7 @@ class HomeRepository {
   getPrayerTimesForCurrentLocation() async {
     try {
       final position = await GeolocationService.getCurrentLocation();
-      return _calculate(position.latitude, position.longitude);
+      return _calculatePrayerTime(position.latitude, position.longitude);
     } on LocationPermissionException catch (e) {
       return Left(
         ServerFailure('Location permission error: ${e.message}', 403),
@@ -29,7 +29,7 @@ class HomeRepository {
   Future<Either<Failure, AladhanPrayerTimesModel>> getPrayerTimesForLocation({
     required double latitude,
     required double longitude,
-  }) => _calculate(latitude, longitude);
+  }) => _calculatePrayerTime(latitude, longitude);
 
   Future<bool> hasLocationPermission() =>
       GeolocationService.hasLocationPermission();
@@ -39,24 +39,27 @@ class HomeRepository {
 
   // ── Private helpers ────────────────────────────────────────────────────────
 
-  Future<Either<Failure, AladhanPrayerTimesModel>> _calculate(
+  Future<Either<Failure, AladhanPrayerTimesModel>> _calculatePrayerTime(
     double latitude,
     double longitude,
   ) async {
     try {
-      final prayerTimes = AdhanPrayerService.calculatePrayerTimes(
+      // ✅ استخدام await لأن الدالة async
+      final prayerTimes = await AdhanPrayerService.calculatePrayerTime(
         latitude: latitude,
         longitude: longitude,
       );
+      
       return Right(
         AladhanPrayerTimesModel.fromAdhanPrayerTimes(
           prayerTimes: prayerTimes,
           latitude: latitude,
           longitude: longitude,
-          methodName: AdhanPrayerService.defaultMethodName,
+          // ✅ methodName اختياري، سيتم استخدام defaultMethodName تلقائياً
         ),
       );
     } catch (e) {
+      print('❌ Prayer time calculation failed: $e'); // للتصحيح
       return Left(ServerFailure('Prayer time calculation failed: $e', 500));
     }
   }
