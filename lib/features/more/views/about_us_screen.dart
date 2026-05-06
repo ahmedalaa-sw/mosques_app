@@ -34,7 +34,7 @@ class AboutUsScreen extends StatelessWidget {
               child: Text(
                 'app_title'.tr(),
                 style: TextStyle(
-                  fontFamily: 'Plus Jakarta Sans',
+                  fontFamily: 'IBMPlexSansArabic',
                   fontSize: 28.sp,
                   fontWeight: FontWeight.w800,
                   color: AppColor.onSurface,

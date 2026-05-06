@@ -9,70 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:workmanager/workmanager.dart';
+
 import 'adhan_prayer_service.dart';
+import 'prayer_notification_config.dart';
 
-const _uniqueName = 'prayerNotificationReschedule';
+const _uniqueName         = 'prayerNotificationReschedule';
 const _uniqueNamePeriodic = 'prayerNotificationDailySync';
-
-class _PrayerChannelConfig {
-  final String channelId;
-  final String channelName;
-  final String channelDescription;
-  final String soundResource;
-
-  const _PrayerChannelConfig({
-    required this.channelId,
-    required this.channelName,
-    required this.channelDescription,
-    required this.soundResource,
-  });
-}
-
-const _prayerConfigs = <String, _PrayerChannelConfig>{
-  'Fajr': _PrayerChannelConfig(
-    channelId: 'prayer_fajr_v2',
-    channelName: 'Fajr Prayer Time',
-    channelDescription: 'Notification for Fajr prayer time',
-    soundResource: 'fajr_call',
-  ),
-  'Sunrise': _PrayerChannelConfig(
-    channelId: 'prayer_sunrise_v2',
-    channelName: 'Sunrise Time',
-    channelDescription: 'Notification for Sunrise time',
-    soundResource: 'sunrise_call',
-  ),
-  'Dhuhr': _PrayerChannelConfig(
-    channelId: 'prayer_dhuhr_v2',
-    channelName: 'Dhuhr Prayer Time',
-    channelDescription: 'Notification for Dhuhr prayer time',
-    soundResource: 'dhuhr_call',
-  ),
-  'Asr': _PrayerChannelConfig(
-    channelId: 'prayer_asr_v2',
-    channelName: 'Asr Prayer Time',
-    channelDescription: 'Notification for Asr prayer time',
-    soundResource: 'asr_call',
-  ),
-  'Maghrib': _PrayerChannelConfig(
-    channelId: 'prayer_maghrib_v2',
-    channelName: 'Maghrib Prayer Time',
-    channelDescription: 'Notification for Maghrib prayer time',
-    soundResource: 'maghrib_call',
-  ),
-  'Isha': _PrayerChannelConfig(
-    channelId: 'prayer_isha_v2',
-    channelName: 'Isha Prayer Time',
-    channelDescription: 'Notification for Isha prayer time',
-    soundResource: 'isha_call',
-  ),
-};
-
-const _fallbackConfig = _PrayerChannelConfig(
-  channelId: 'prayer_fajr_v2',
-  channelName: 'Fajr Prayer Time',
-  channelDescription: 'Notification for Fajr prayer time',
-  soundResource: 'fajr_call',
-);
 
 @pragma('vm:entry-point')
 void rescheduleCallbackDispatcher() {
@@ -90,28 +32,9 @@ void rescheduleCallbackDispatcher() {
 class BackgroundRescheduleService {
   BackgroundRescheduleService._();
 
-  static const _prefsLat = 'last_known_lat';
-  static const _prefsLng = 'last_known_lng';
+  static const _prefsLat     = 'last_known_lat';
+  static const _prefsLng     = 'last_known_lng';
   static const _prefsAzanKey = 'azan_enabled';
-
-  // Must match NotificationService — this isolate is separate so we cannot
-  // share constants via instance access without re-creating the channels.
-  static const _preAlertChannelId = 'prayer_pre_alert_v2';
-  static const _preAlertChannelName = 'Prayer Pre-Alert';
-  static const _preAlertChannelDesc =
-      'Notifies 15 minutes before each prayer';
-
-  static const _azanChannelId = 'prayer_azan_v2';
-  static const _azanChannelName = 'Azan';
-  static const _azanChannelDesc = 'Plays the full azan after prayer call';
-
-  static const _azanBaseId = 300; // 300..305
-  static const Duration _azanDelay = Duration(seconds: 8);
-
-  static const _legacyChannelIds = [
-    'prayer_times_channel',
-    'prayer_at_time_v2',
-  ];
 
   static Future<void> registerTasks() async {
     await Workmanager().registerOneOffTask(
@@ -121,7 +44,6 @@ class BackgroundRescheduleService {
       existingWorkPolicy: ExistingWorkPolicy.replace,
       constraints: Constraints(networkType: NetworkType.notRequired),
     );
-
     await Workmanager().registerPeriodicTask(
       _uniqueNamePeriodic,
       _uniqueNamePeriodic,
@@ -147,28 +69,29 @@ class BackgroundRescheduleService {
     }
 
     final plugin = FlutterLocalNotificationsPlugin();
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosInit = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
     await plugin.initialize(
-      const InitializationSettings(android: androidInit, iOS: iosInit),
+      const InitializationSettings(
+        android: AndroidInitializationSettings('notification_logo'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        ),
+      ),
     );
 
     final android = plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
-      for (final id in _legacyChannelIds) {
+      for (final id in kLegacyChannelIds) {
         await android.deleteNotificationChannel(id);
       }
 
       await android.createNotificationChannel(
         const AndroidNotificationChannel(
-          _preAlertChannelId,
-          _preAlertChannelName,
-          description: _preAlertChannelDesc,
+          kPreAlertChannelId,
+          kPreAlertChannelName,
+          description: kPreAlertChannelDesc,
           importance: Importance.high,
           playSound: true,
           enableVibration: true,
@@ -176,33 +99,32 @@ class BackgroundRescheduleService {
         ),
       );
 
-      for (final config in _prayerConfigs.values) {
+      for (final config in kPrayerConfigs.values) {
         await android.createNotificationChannel(
           AndroidNotificationChannel(
-            config.channelId,
+            config.callChannelId,
             config.channelName,
             description: config.channelDescription,
             importance: Importance.max,
             playSound: true,
-            sound: RawResourceAndroidNotificationSound(config.soundResource),
+            sound: RawResourceAndroidNotificationSound(config.callSound),
+            enableVibration: true,
+            enableLights: true,
+          ),
+        );
+        await android.createNotificationChannel(
+          AndroidNotificationChannel(
+            config.azanChannelId,
+            '${config.channelName} + Azan',
+            description: config.channelDescription,
+            importance: Importance.max,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound(config.azanSound),
             enableVibration: true,
             enableLights: true,
           ),
         );
       }
-
-      await android.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _azanChannelId,
-          _azanChannelName,
-          description: _azanChannelDesc,
-          importance: Importance.high,
-          playSound: true,
-          sound: RawResourceAndroidNotificationSound('azan'),
-          enableVibration: true,
-          enableLights: true,
-        ),
-      );
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -211,7 +133,7 @@ class BackgroundRescheduleService {
 
     double latitude, longitude;
     if (lat != null && lng != null) {
-      latitude = lat;
+      latitude  = lat;
       longitude = lng;
     } else {
       try {
@@ -221,13 +143,11 @@ class BackgroundRescheduleService {
             timeLimit: Duration(seconds: 10),
           ),
         );
-        latitude = pos.latitude;
+        latitude  = pos.latitude;
         longitude = pos.longitude;
         await cacheLastLocation(latitude, longitude);
       } catch (_) {
-        dev.log(
-          '[BackgroundReschedule] No location available — cannot reschedule',
-        );
+        dev.log('[BackgroundReschedule] No location — cannot reschedule');
         return false;
       }
     }
@@ -238,46 +158,47 @@ class BackgroundRescheduleService {
     );
 
     final today = DateTime.now();
-
-    DateTime toLocalDateTime(DateTime Function(PrayerTimes) getter) {
+    DateTime toLocal(DateTime Function(PrayerTimes) getter) {
       final d = getter(prayerTimes).toLocal();
       return DateTime(today.year, today.month, today.day, d.hour, d.minute);
     }
 
     final prayers = <String, DateTime>{
-      'Fajr': toLocalDateTime((p) => p.fajr),
-      'Sunrise': toLocalDateTime((p) => p.sunrise),
-      'Dhuhr': toLocalDateTime((p) => p.dhuhr),
-      'Asr': toLocalDateTime((p) => p.asr),
-      'Maghrib': toLocalDateTime((p) => p.maghrib),
-      'Isha': toLocalDateTime((p) => p.isha),
+      'Fajr'   : toLocal((p) => p.fajr),
+      'Sunrise': toLocal((p) => p.sunrise),
+      'Dhuhr'  : toLocal((p) => p.dhuhr),
+      'Asr'    : toLocal((p) => p.asr),
+      'Maghrib': toLocal((p) => p.maghrib),
+      'Isha'   : toLocal((p) => p.isha),
     };
 
-    for (int i = 100; i < 106; i++) {
+    // Cancel all previous notifications (including old azan IDs 300–305).
+    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers; i++) {
       await plugin.cancel(i);
     }
-    for (int i = 200; i < 206; i++) {
+    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers; i++) {
       await plugin.cancel(i);
     }
     for (int i = 300; i < 306; i++) {
       await plugin.cancel(i);
     }
 
+    final azanEnabled = prefs.getBool(_prefsAzanKey) ?? false;
     final now = DateTime.now();
-    int id15 = 100;
-    int idAt = 200;
+    int preId = kPreAlertBaseId;
+    int atId  = kAtTimeBaseId;
 
     for (final entry in prayers.entries) {
       final name = entry.key;
       final time = entry.value;
 
-      final notifyAt = time.subtract(const Duration(minutes: 15));
-      if (!notifyAt.isBefore(now)) {
+      final preTime = time.subtract(const Duration(minutes: 15));
+      if (!preTime.isBefore(now)) {
         await plugin.zonedSchedule(
-          id15,
+          preId,
           '🕌 $name (${_arabic(name)}) in 15 minutes',
           'Get ready — $name starts at ${_fmt(time)}.',
-          tz.TZDateTime.from(notifyAt, tz.local),
+          tz.TZDateTime.from(preTime, tz.local),
           _preAlertDetails(name),
           androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation:
@@ -288,11 +209,11 @@ class BackgroundRescheduleService {
 
       if (!time.isBefore(now)) {
         await plugin.zonedSchedule(
-          idAt,
+          atId,
           '🕌 $name (${_arabic(name)}) prayer time',
           "It's time for $name prayer — ${_fmt(time)}.",
           tz.TZDateTime.from(time, tz.local),
-          _atTimeDetails(name),
+          _atTimeDetails(name, azanEnabled: azanEnabled),
           androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
@@ -300,34 +221,8 @@ class BackgroundRescheduleService {
         );
       }
 
-      id15++;
-      idAt++;
-    }
-
-    // Schedule azan notifications if enabled.
-    final azanEnabled = prefs.getBool(_prefsAzanKey) ?? false;
-    if (azanEnabled) {
-      int idAzan = _azanBaseId;
-      for (final entry in prayers.entries) {
-        final name = entry.key;
-        final time = entry.value;
-
-        final azanTime = time.add(_azanDelay);
-        if (!azanTime.isBefore(now)) {
-          await plugin.zonedSchedule(
-            idAzan,
-            '🕌 ${_arabic(name)} — Azan',
-            'Azan for $name prayer.',
-            tz.TZDateTime.from(azanTime, tz.local),
-            _azanDetails(name),
-            androidScheduleMode: AndroidScheduleMode.alarmClock,
-            uiLocalNotificationDateInterpretation:
-                UILocalNotificationDateInterpretation.absoluteTime,
-            payload: 'azan:$name',
-          );
-        }
-        idAzan++;
-      }
+      preId++;
+      atId++;
     }
 
     dev.log(
@@ -337,19 +232,19 @@ class BackgroundRescheduleService {
     return true;
   }
 
+  // ── Notification details ──────────────────────────────────────────────────
+
   static NotificationDetails _preAlertDetails(String name) =>
       NotificationDetails(
         android: AndroidNotificationDetails(
-          _preAlertChannelId,
-          _preAlertChannelName,
-          channelDescription: _preAlertChannelDesc,
+          kPreAlertChannelId,
+          kPreAlertChannelName,
+          channelDescription: kPreAlertChannelDesc,
           importance: Importance.high,
           priority: Priority.high,
           category: AndroidNotificationCategory.reminder,
           visibility: NotificationVisibility.public,
-          icon: 'ic_stat_notification',
-          largeIcon:
-              const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          icon: 'notification_logo',
           color: const Color(0xFF84D5C5),
           colorized: true,
           styleInformation: BigTextStyleInformation(
@@ -365,24 +260,26 @@ class BackgroundRescheduleService {
         ),
       );
 
-  static NotificationDetails _atTimeDetails(String name) {
-    final config = _prayerConfigs[name] ?? _fallbackConfig;
-
+  static NotificationDetails _atTimeDetails(
+    String name, {
+    required bool azanEnabled,
+  }) {
+    final config = kPrayerConfigs[name] ?? kFallbackPrayerConfig;
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        config.channelId,
-        config.channelName,
+        config.channelId(azanEnabled: azanEnabled),
+        config.channelDisplayName(azanEnabled: azanEnabled),
         channelDescription: config.channelDescription,
         importance: Importance.max,
         priority: Priority.max,
         category: AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,
-        icon: 'ic_stat_notification',
-        largeIcon:
-            const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        icon: 'notification_logo',
         color: const Color(0xFFE9C349),
         colorized: true,
-        sound: RawResourceAndroidNotificationSound(config.soundResource),
+        sound: RawResourceAndroidNotificationSound(
+          config.sound(azanEnabled: azanEnabled),
+        ),
         styleInformation: BigTextStyleInformation(
           "It's time for $name prayer.",
           contentTitle: '🕌 $name (${_arabic(name)})',
@@ -392,54 +289,15 @@ class BackgroundRescheduleService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        sound: config.soundResource,
+        sound: config.sound(azanEnabled: azanEnabled),
         interruptionLevel: InterruptionLevel.timeSensitive,
       ),
     );
   }
 
-  static NotificationDetails _azanDetails(String name) => NotificationDetails(
-        android: AndroidNotificationDetails(
-          _azanChannelId,
-          _azanChannelName,
-          channelDescription: _azanChannelDesc,
-          importance: Importance.high,
-          priority: Priority.high,
-          category: AndroidNotificationCategory.reminder,
-          visibility: NotificationVisibility.public,
-          icon: 'ic_stat_notification',
-          largeIcon:
-              const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-          color: const Color(0xFF1B5E45),
-          colorized: true,
-          sound: const RawResourceAndroidNotificationSound('azan'),
-          styleInformation: BigTextStyleInformation(
-            'Azan for $name prayer.',
-            contentTitle: '🕌 ${_arabic(name)} — Azan',
-          ),
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          sound: 'azan',
-          interruptionLevel: InterruptionLevel.timeSensitive,
-        ),
-      );
-
   static String _fmt(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:'
       '${dt.minute.toString().padLeft(2, '0')}';
 
-  static String _arabic(String name) {
-    const map = {
-      'Fajr': 'الفجر',
-      'Sunrise': 'الشروق',
-      'Dhuhr': 'الظهر',
-      'Asr': 'العصر',
-      'Maghrib': 'المغرب',
-      'Isha': 'العشاء',
-    };
-    return map[name] ?? name;
-  }
+  static String _arabic(String name) => kArabicNames[name] ?? name;
 }

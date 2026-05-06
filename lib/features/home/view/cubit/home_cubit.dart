@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
@@ -10,13 +11,15 @@ import 'package:mosques_app/features/home/model/home_repo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_state.dart';
 
-class HomeCubit extends Cubit<HomeState> {
+class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   final HomeRepository repository;
 
   AladhanPrayerTimesModel? _loadedPrayerTimes;
   Timer? _prayerTransitionTimer;
 
-  HomeCubit({required this.repository}) : super(const HomeInitial());
+  HomeCubit({required this.repository}) : super(const HomeInitial()) {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   Future<void> loadPrayerTimes() async {
     try {
@@ -162,6 +165,34 @@ class HomeCubit extends Cubit<HomeState> {
     _scheduleNextPrayerTransition(prayerTimes);
   }
 
+  /// Called on app resume to immediately correct any stale prayer indicator
+  /// that resulted from the Dart timer being paused while the app was backgrounded.
+  void _refreshCurrentPrayer() {
+    final prayerTimes = _loadedPrayerTimes;
+    if (prayerTimes == null) return;
+
+    final currentPrayer = _getCurrentPrayerName(prayerTimes);
+    final currentState = state;
+    if (currentState is HomeLoaded &&
+        currentState.currentPrayerName == currentPrayer) {
+      // Prayer hasn't changed but the timer may have missed its window — reschedule.
+      _scheduleNextPrayerTransition(prayerTimes);
+      return;
+    }
+    final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
+    emit(HomeLoaded(
+      prayerTimes: prayerTimes,
+      prayers: prayers,
+      currentPrayerName: currentPrayer,
+    ));
+    _scheduleNextPrayerTransition(prayerTimes);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshCurrentPrayer();
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   String? _getCurrentPrayerName(AladhanPrayerTimesModel prayerTimes) {
@@ -222,27 +253,26 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     final prayers = <String, DateTime>{
-      'Fajr': toDateTime(prayerTimes.fajr),
+      'Fajr'   : toDateTime(prayerTimes.fajr),
       'Sunrise': toDateTime(prayerTimes.sunrise),
-      'Dhuhr': toDateTime(prayerTimes.dhuhr),
-      'Asr': toDateTime(prayerTimes.asr),
+      'Dhuhr'  : toDateTime(prayerTimes.dhuhr),
+      'Asr'    : toDateTime(prayerTimes.asr),
       'Maghrib': toDateTime(prayerTimes.maghrib),
-      'Isha': toDateTime(prayerTimes.isha),
+      'Isha'   : toDateTime(prayerTimes.isha),
     };
-
-    NotificationService.instance.schedulePrayerNotifications(prayers);
 
     final prefs = await SharedPreferences.getInstance();
     final azanEnabled = prefs.getBool('azan_enabled') ?? false;
-    if (azanEnabled) {
-      NotificationService.instance.scheduleAzanNotifications(prayers);
-    } else {
-      NotificationService.instance.cancelAzanNotifications();
-    }
+
+    await NotificationService.instance.schedulePrayerNotifications(
+      prayers,
+      azanEnabled: azanEnabled,
+    );
   }
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     _prayerTransitionTimer?.cancel();
     return super.close();
   }

@@ -7,7 +7,7 @@ class AppTheme {
     brightness: Brightness.light,
     primaryColor: AppColor.primaryColor1,
     scaffoldBackgroundColor: const Color(0xFFF5F7F6),
-    fontFamily: 'Nunito',
+    fontFamily: 'IBMPlexSansArabic',
     colorScheme: const ColorScheme.light(
       primary: AppColor.primaryColor1,
       onPrimary: AppColor.onPrimary,
@@ -33,7 +33,7 @@ class AppTheme {
     brightness: Brightness.dark,
     primaryColor: AppColor.primaryColor1,
     scaffoldBackgroundColor: AppColor.surfaceDim,
-    fontFamily: 'Nunito',
+    fontFamily: 'IBMPlexSansArabic',
     colorScheme: const ColorScheme.dark(
       primary: AppColor.primaryColor1,
       onPrimary: AppColor.onPrimary,

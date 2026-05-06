@@ -60,6 +60,7 @@ class PrayerCountdownCard extends StatelessWidget {
           Text(
             currentPrayerName,
             style: TextStyle(
+              fontFamily: 'IBMPlexSansArabic',
               color: AppColor.accentTeal,
               fontSize: 36.sp,
               fontWeight: FontWeight.w600,
@@ -78,6 +79,7 @@ class PrayerCountdownCard extends StatelessWidget {
             child: Text(
               'ongoing'.tr(),
               style: TextStyle(
+                fontFamily: 'IBMPlexSansArabic',
                 color: AppColor.badgeGold,
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w600,
@@ -91,6 +93,7 @@ class PrayerCountdownCard extends StatelessWidget {
           Text(
             '${'next_prayer'.tr()}$nextPrayerName in',
             style: TextStyle(
+              fontFamily: 'IBMPlexSansArabic',
               color: AppColor.textSecondary,
               fontSize: 13.sp,
             ),
@@ -103,6 +106,7 @@ class PrayerCountdownCard extends StatelessWidget {
           Text(
             formattedCountdown,
             style: TextStyle(
+              fontFamily: 'IBMPlexSansArabic',
               color: AppColor.white,
               fontSize: countdownFontSize,
               fontWeight: FontWeight.w700,

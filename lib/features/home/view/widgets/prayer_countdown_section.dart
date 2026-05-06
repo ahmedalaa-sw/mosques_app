@@ -114,6 +114,7 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
         Text(
           'now_praying'.tr(),
           style: TextStyle(
+            fontFamily: 'IBMPlexSansArabic',
             color: AppColor.textSecondary,
             fontSize: 12.sp,
             letterSpacing: 1.5,

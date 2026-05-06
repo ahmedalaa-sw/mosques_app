@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
 import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
 import 'package:mosques_app/features/home/view/widgets/home_prayer_view.dart';
@@ -15,6 +14,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => HomeCubit(repository: HomeRepository())..loadPrayerTimes(),
+
       child: Scaffold(
         backgroundColor: AppColor.primaryColor,
         appBar: const _HomeAppBar(),
@@ -37,6 +37,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         'app_title'.tr(),
         style: TextStyle(
+          fontFamily: 'IBMPlexSansArabic',
           color: AppColor.appBarTextColor,
           fontSize: 24,
           fontWeight: FontWeight.w600,
@@ -46,34 +47,6 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColor.appBarColor,
       elevation: 0,
       toolbarHeight: 50.h,
-      actions: [
-        // Padding(
-        //   padding: EdgeInsets.only(right: 8.w),
-        //   child: Center(
-        //     child: GestureDetector(
-        //       onTap: () => NotificationService.instance.showTestNotification(),
-        //       child: Icon(
-        //         Icons.notifications_active_outlined,
-        //         color: AppColor.appBarTextColor,
-        //         size: 22.sp,
-        //       ),
-        //     ),
-        //   ),
-        // ),
-        Padding(
-          padding: EdgeInsets.only(right: 16.w),
-          child: Center(
-            child: GestureDetector(
-              onTap: () => context.read<HomeCubit>().refreshPrayerTimes(),
-              child: Icon(
-                Icons.refresh,
-                color: AppColor.appBarTextColor,
-                size: 24.sp,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

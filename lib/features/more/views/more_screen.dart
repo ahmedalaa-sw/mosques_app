@@ -27,7 +27,7 @@ class MoreScreen extends StatelessWidget {
             color: AppColor.primaryColor1,
             fontSize: 24.sp,
             fontWeight: FontWeight.w700,
-            fontFamily: 'Plus Jakarta Sans',
+            fontFamily: 'IBMPlexSansArabic',
             letterSpacing: -0.5,
           ),
         ),
@@ -92,7 +92,7 @@ class _HeaderSection extends StatelessWidget {
         Text(
           'settings_and_more'.tr(),
           style: TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
+            fontFamily: 'IBMPlexSansArabic',
             fontSize: 32.sp,
             fontWeight: FontWeight.w800,
             letterSpacing: -1.5,
