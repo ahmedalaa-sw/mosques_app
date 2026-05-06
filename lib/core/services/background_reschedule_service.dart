@@ -14,6 +14,66 @@ import 'adhan_prayer_service.dart';
 const _uniqueName = 'prayerNotificationReschedule';
 const _uniqueNamePeriodic = 'prayerNotificationDailySync';
 
+class _PrayerChannelConfig {
+  final String channelId;
+  final String channelName;
+  final String channelDescription;
+  final String soundResource;
+
+  const _PrayerChannelConfig({
+    required this.channelId,
+    required this.channelName,
+    required this.channelDescription,
+    required this.soundResource,
+  });
+}
+
+const _prayerConfigs = <String, _PrayerChannelConfig>{
+  'Fajr': _PrayerChannelConfig(
+    channelId: 'prayer_fajr_v2',
+    channelName: 'Fajr Prayer Time',
+    channelDescription: 'Notification for Fajr prayer time',
+    soundResource: 'fajr_call',
+  ),
+  'Sunrise': _PrayerChannelConfig(
+    channelId: 'prayer_sunrise_v2',
+    channelName: 'Sunrise Time',
+    channelDescription: 'Notification for Sunrise time',
+    soundResource: 'sunrise_call',
+  ),
+  'Dhuhr': _PrayerChannelConfig(
+    channelId: 'prayer_dhuhr_v2',
+    channelName: 'Dhuhr Prayer Time',
+    channelDescription: 'Notification for Dhuhr prayer time',
+    soundResource: 'dhuhr_call',
+  ),
+  'Asr': _PrayerChannelConfig(
+    channelId: 'prayer_asr_v2',
+    channelName: 'Asr Prayer Time',
+    channelDescription: 'Notification for Asr prayer time',
+    soundResource: 'asr_call',
+  ),
+  'Maghrib': _PrayerChannelConfig(
+    channelId: 'prayer_maghrib_v2',
+    channelName: 'Maghrib Prayer Time',
+    channelDescription: 'Notification for Maghrib prayer time',
+    soundResource: 'maghrib_call',
+  ),
+  'Isha': _PrayerChannelConfig(
+    channelId: 'prayer_isha_v2',
+    channelName: 'Isha Prayer Time',
+    channelDescription: 'Notification for Isha prayer time',
+    soundResource: 'isha_call',
+  ),
+};
+
+const _fallbackConfig = _PrayerChannelConfig(
+  channelId: 'prayer_fajr_v2',
+  channelName: 'Fajr Prayer Time',
+  channelDescription: 'Notification for Fajr prayer time',
+  soundResource: 'fajr_call',
+);
+
 @pragma('vm:entry-point')
 void rescheduleCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
@@ -37,13 +97,13 @@ class BackgroundRescheduleService {
   // share constants via instance access without re-creating the channels.
   static const _preAlertChannelId = 'prayer_pre_alert_v2';
   static const _preAlertChannelName = 'Prayer Pre-Alert';
-  static const _preAlertChannelDesc = 'Notifies 15 minutes before each prayer';
+  static const _preAlertChannelDesc =
+      'Notifies 15 minutes before each prayer';
 
-  static const _atTimeChannelId = 'prayer_at_time_v2';
-  static const _atTimeChannelName = 'Prayer Time';
-  static const _atTimeChannelDesc = 'Notifies at the start of each prayer';
-
-  static const _legacyChannelId = 'prayer_times_channel';
+  static const _legacyChannelIds = [
+    'prayer_times_channel',
+    'prayer_at_time_v2',
+  ];
 
   static Future<void> registerTasks() async {
     await Workmanager().registerOneOffTask(
@@ -92,7 +152,10 @@ class BackgroundRescheduleService {
     final android = plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
-      await android.deleteNotificationChannel(_legacyChannelId);
+      for (final id in _legacyChannelIds) {
+        await android.deleteNotificationChannel(id);
+      }
+
       await android.createNotificationChannel(
         const AndroidNotificationChannel(
           _preAlertChannelId,
@@ -104,17 +167,21 @@ class BackgroundRescheduleService {
           enableLights: true,
         ),
       );
-      await android.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _atTimeChannelId,
-          _atTimeChannelName,
-          description: _atTimeChannelDesc,
-          importance: Importance.max,
-          playSound: true,
-          enableVibration: true,
-          enableLights: true,
-        ),
-      );
+
+      for (final config in _prayerConfigs.values) {
+        await android.createNotificationChannel(
+          AndroidNotificationChannel(
+            config.channelId,
+            config.channelName,
+            description: config.channelDescription,
+            importance: Importance.max,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound(config.soundResource),
+            enableVibration: true,
+            enableLights: true,
+          ),
+        );
+      }
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -230,7 +297,8 @@ class BackgroundRescheduleService {
           category: AndroidNotificationCategory.reminder,
           visibility: NotificationVisibility.public,
           icon: 'ic_stat_notification',
-          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          largeIcon:
+              const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           color: const Color(0xFF84D5C5),
           colorized: true,
           styleInformation: BigTextStyleInformation(
@@ -246,32 +314,38 @@ class BackgroundRescheduleService {
         ),
       );
 
-  static NotificationDetails _atTimeDetails(String name) =>
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          _atTimeChannelId,
-          _atTimeChannelName,
-          channelDescription: _atTimeChannelDesc,
-          importance: Importance.max,
-          priority: Priority.max,
-          category: AndroidNotificationCategory.reminder,
-          visibility: NotificationVisibility.public,
-          icon: 'ic_stat_notification',
-          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-          color: const Color(0xFFE9C349),
-          colorized: true,
-          styleInformation: BigTextStyleInformation(
-            "It's time for $name prayer.",
-            contentTitle: '🕌 $name (${_arabic(name)})',
-          ),
+  static NotificationDetails _atTimeDetails(String name) {
+    final config = _prayerConfigs[name] ?? _fallbackConfig;
+
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        config.channelId,
+        config.channelName,
+        channelDescription: config.channelDescription,
+        importance: Importance.max,
+        priority: Priority.max,
+        category: AndroidNotificationCategory.reminder,
+        visibility: NotificationVisibility.public,
+        icon: 'ic_stat_notification',
+        largeIcon:
+            const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        color: const Color(0xFFE9C349),
+        colorized: true,
+        sound: RawResourceAndroidNotificationSound(config.soundResource),
+        styleInformation: BigTextStyleInformation(
+          "It's time for $name prayer.",
+          contentTitle: '🕌 $name (${_arabic(name)})',
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          interruptionLevel: InterruptionLevel.timeSensitive,
-        ),
-      );
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        sound: config.soundResource,
+        interruptionLevel: InterruptionLevel.timeSensitive,
+      ),
+    );
+  }
 
   static String _fmt(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:'

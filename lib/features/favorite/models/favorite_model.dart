@@ -1,4 +1,3 @@
-import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/core/network/endpoint_constants.dart';
 import 'package:mosques_app/features/mosque_details/models/mosque_detail_model.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
@@ -104,12 +103,12 @@ class FavoriteModel {
   }
 
   static String _searchStatusLabel(MosqueDetailModel mosque) {
-    if (mosque.isOpenNow == true) return AppStrings.statusOpen;
-    if (mosque.isOpenNow == false) return AppStrings.statusClosed;
-    if (mosque.statusLabel == 'Status Not Valid') {
-      return AppStrings.statusNotValid;
+    if (mosque.isOpenNow == true) return 'open';
+    if (mosque.isOpenNow == false) return 'closed';
+    if (mosque.statusLabel == 'status_not_valid') {
+      return 'status_not_valid';
     }
-    return AppStrings.statusNotFound;
+    return 'not_found';
   }
 
   static String _fallbackStatusLabel({
@@ -119,8 +118,8 @@ class FavoriteModel {
     if (statusLabel != null && statusLabel.trim().isNotEmpty) {
       return statusLabel;
     }
-    if (isOpen == true) return AppStrings.statusOpen;
-    if (isOpen == false) return AppStrings.statusClosed;
-    return AppStrings.statusNotFound;
+    if (isOpen == true) return 'open';
+    if (isOpen == false) return 'closed';
+    return 'not_found';
   }
 }

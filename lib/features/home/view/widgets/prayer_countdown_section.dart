@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,11 +31,11 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
   late _PrayerInfo _current;
   late _PrayerInfo _next;
   List<_PrayerInfo> get _prayers => [
-        _PrayerInfo('Fajr', widget.prayerTimes.fajr),
-        _PrayerInfo('Dhuhr', widget.prayerTimes.dhuhr),
-        _PrayerInfo('Asr', widget.prayerTimes.asr),
-        _PrayerInfo('Maghrib', widget.prayerTimes.maghrib),
-        _PrayerInfo('Isha', widget.prayerTimes.isha),
+        _PrayerInfo('fajr'.tr(), widget.prayerTimes.fajr),
+        _PrayerInfo('dhuhr'.tr(), widget.prayerTimes.dhuhr),
+        _PrayerInfo('asr'.tr(), widget.prayerTimes.asr),
+        _PrayerInfo('maghrib'.tr(), widget.prayerTimes.maghrib),
+        _PrayerInfo('isha'.tr(), widget.prayerTimes.isha),
       ];
   int _toMinutes(String t) {
     final parts = t.split(':');
@@ -111,7 +112,7 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
     return Column(
       children: [
         Text(
-          'NOW PRAYING',
+          'now_praying'.tr(),
           style: TextStyle(
             color: AppColor.textSecondary,
             fontSize: 12.sp,
@@ -130,12 +131,12 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             SunTimingCard(
-              label: 'SUNRISE',
+              label: 'sunrise'.tr(),
               time: TimeFormatHelper.format(widget.prayerTimes.sunrise, use24Hour),
               icon: Icons.wb_sunny,
             ),
             SunTimingCard(
-              label: 'SUNSET',
+              label: 'sunset'.tr(),
               time: TimeFormatHelper.format(widget.prayerTimes.maghrib, use24Hour),
               icon: Icons.wb_sunny_outlined,
             ),

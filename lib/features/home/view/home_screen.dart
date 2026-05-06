@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
@@ -34,7 +35,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       automaticallyImplyLeading: false,
       title: Text(
-        'Al-Masjid',
+        'app_title'.tr(),
         style: TextStyle(
           color: AppColor.appBarTextColor,
           fontSize: 24,

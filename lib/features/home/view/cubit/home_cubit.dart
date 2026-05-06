@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
@@ -116,12 +117,12 @@ class HomeCubit extends Cubit<HomeState> {
       // TimeOfDay.fromString() does NOT exist in Flutter's SDK.
       // We parse "HH:mm" strings directly instead.
       final prayers = [
-        ('Fajr', _parseMinutes(prayerTimes.fajr)),
-        ('Sunrise', _parseMinutes(prayerTimes.sunrise)),
-        ('Dhuhr', _parseMinutes(prayerTimes.dhuhr)),
-        ('Asr', _parseMinutes(prayerTimes.asr)),
-        ('Maghrib', _parseMinutes(prayerTimes.maghrib)),
-        ('Isha', _parseMinutes(prayerTimes.isha)),
+        ('fajr'.tr(), _parseMinutes(prayerTimes.fajr)),
+        ('sunrise'.tr(), _parseMinutes(prayerTimes.sunrise)),
+        ('dhuhr'.tr(), _parseMinutes(prayerTimes.dhuhr)),
+        ('asr'.tr(), _parseMinutes(prayerTimes.asr)),
+        ('maghrib'.tr(), _parseMinutes(prayerTimes.maghrib)),
+        ('isha'.tr(), _parseMinutes(prayerTimes.isha)),
       ];
 
       for (int i = 0; i < prayers.length; i++) {
@@ -164,12 +165,12 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     final prayers = <String, DateTime>{
-      'Fajr': _toDateTime(prayerTimes.fajr),
-      'Sunrise': _toDateTime(prayerTimes.sunrise),
-      'Dhuhr': _toDateTime(prayerTimes.dhuhr),
-      'Asr': _toDateTime(prayerTimes.asr),
-      'Maghrib': _toDateTime(prayerTimes.maghrib),
-      'Isha': _toDateTime(prayerTimes.isha),
+      'fajr'.tr(): _toDateTime(prayerTimes.fajr),
+      'sunrise'.tr(): _toDateTime(prayerTimes.sunrise),
+      'dhuhr'.tr(): _toDateTime(prayerTimes.dhuhr),
+      'asr'.tr(): _toDateTime(prayerTimes.asr),
+      'maghrib'.tr(): _toDateTime(prayerTimes.maghrib),
+      'isha'.tr(): _toDateTime(prayerTimes.isha),
     };
 
     NotificationService.instance.schedulePrayerNotifications(prayers);

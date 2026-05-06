@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:mosques_app/features/home/view/widgets/centered_action_view.dart';
 
@@ -25,9 +26,9 @@ class ErrorView extends StatelessWidget {
     return CenteredActionView(
       icon: Icons.error_outline,
       iconColor: Colors.red,
-      title: 'Failed to Load Prayer Times',
+      title: 'prayer_times_error'.tr(),
       message: message,
-      subtitle: statusCode != null ? 'Error code: $statusCode' : null,
+      subtitle: statusCode != null ? '${'prayer_times_error_code'.tr()}$statusCode' : null,
       onRetry: onRetry,
     );
   }

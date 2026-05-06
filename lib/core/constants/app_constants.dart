@@ -5,6 +5,6 @@ class AppConstants {
   static const cachedMosques = 'cached_mosques';
 
   // Location
-  static const locationThresholdMeters = 1000.0;
-  static const defaultSearchRadiusMeters = 1000;
+  static const locationThresholdMeters = 100;
+  static const defaultSearchRadiusMeters = 100;
 }
