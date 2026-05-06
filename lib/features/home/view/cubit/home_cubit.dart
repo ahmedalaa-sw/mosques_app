@@ -4,8 +4,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
+import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
+import 'package:mosques_app/core/utils/location_utils.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -243,29 +245,44 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   }
 
   void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) async {
-    final today = DateTime.now();
-
-    DateTime toDateTime(String hhmm) {
-      final parts = hhmm.split(':');
-      final h = int.tryParse(parts[0]) ?? 0;
-      final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
-      return DateTime(today.year, today.month, today.day, h, m);
-    }
-
-    final prayers = <String, DateTime>{
-      'Fajr'   : toDateTime(prayerTimes.fajr),
-      'Sunrise': toDateTime(prayerTimes.sunrise),
-      'Dhuhr'  : toDateTime(prayerTimes.dhuhr),
-      'Asr'    : toDateTime(prayerTimes.asr),
-      'Maghrib': toDateTime(prayerTimes.maghrib),
-      'Isha'   : toDateTime(prayerTimes.isha),
-    };
-
     final prefs = await SharedPreferences.getInstance();
     final azanEnabled = prefs.getBool('azan_enabled') ?? false;
+    final countryCode = prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+
+    Map<String, DateTime> buildDayMap(DateTime day, AladhanPrayerTimesModel times) {
+      DateTime toDateTime(String hhmm) {
+        final parts = hhmm.split(':');
+        final h = int.tryParse(parts[0]) ?? 0;
+        final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+        return DateTime(day.year, day.month, day.day, h, m);
+      }
+      return {
+        'Fajr'   : toDateTime(times.fajr),
+        'Sunrise': toDateTime(times.sunrise),
+        'Dhuhr'  : toDateTime(times.dhuhr),
+        'Asr'    : toDateTime(times.asr),
+        'Maghrib': toDateTime(times.maghrib),
+        'Isha'   : toDateTime(times.isha),
+      };
+    }
+
+    final tomorrowRaw = AdhanPrayerService.calculatePrayerTimesSync(
+      latitude: prayerTimes.latitude,
+      longitude: prayerTimes.longitude,
+      countryCode: countryCode,
+      date: tomorrow,
+    );
+    final tomorrowModel = AladhanPrayerTimesModel.fromAdhanPrayerTimes(
+      prayerTimes: tomorrowRaw,
+      latitude: prayerTimes.latitude,
+      longitude: prayerTimes.longitude,
+    );
 
     await NotificationService.instance.schedulePrayerNotifications(
-      prayers,
+      [buildDayMap(today, prayerTimes), buildDayMap(tomorrow, tomorrowModel)],
       azanEnabled: azanEnabled,
     );
   }

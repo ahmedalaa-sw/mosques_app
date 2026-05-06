@@ -3,7 +3,11 @@ import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationUtils {
-  static const _countryKey = 'cached_country_code';
+  /// Exposed so background services and cubits can read the cached value
+  /// directly from SharedPreferences without going through geocoding.
+  static const countryCodePrefsKey = 'cached_country_code';
+
+  static const _countryKey = countryCodePrefsKey;
   static const _latKey = 'cached_lat';
   static const _lngKey = 'cached_lng';
 

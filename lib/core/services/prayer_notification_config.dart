@@ -109,12 +109,13 @@ const kFallbackPrayerConfig = PrayerNotificationConfig(
 );
 
 /// Notification IDs.
-/// Pre-alert : 100–105
-/// At-time   : 200–205
+/// Pre-alert : 100–111  (today: 100–105, tomorrow: 106–111)
+/// At-time   : 200–211  (today: 200–205, tomorrow: 206–211)
 /// (Old azan IDs 300–305 are cancelled once during migration.)
-const kPreAlertBaseId = 100;
-const kAtTimeBaseId   = 200;
-const kMaxPrayers     = 6;
+const kPreAlertBaseId  = 100;
+const kAtTimeBaseId    = 200;
+const kMaxPrayers      = 6;
+const kDaysToSchedule  = 2;
 
 /// Arabic prayer names for notification titles.
 const kArabicNames = <String, String>{
