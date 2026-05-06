@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/constants/app_strings.dart';
 
 class MosqueScreenHeader extends StatelessWidget {
   const MosqueScreenHeader({super.key});
@@ -9,7 +9,7 @@ class MosqueScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      AppStrings.appTitle,
+      'app_title'.tr(),
       style: TextStyle(
         color: AppColor.primaryColor,
         fontSize: 22.sp,

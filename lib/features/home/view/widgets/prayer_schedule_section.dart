@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -21,24 +22,24 @@ class PrayerScheduleSection extends StatelessWidget {
   });
 
   static final List<PrayerModel> _fallbackPrayers = [
-    PrayerModel(name: 'Fajr', time: '05:22 AM', icon: Icons.wb_twilight),
-    PrayerModel(name: 'Sunrise', time: '06:54 AM', icon: Icons.wb_sunny),
+    PrayerModel(name: 'fajr'.tr(), time: '05:22 AM', icon: Icons.wb_twilight),
+    PrayerModel(name: 'sunrise'.tr(), time: '06:54 AM', icon: Icons.wb_sunny),
     PrayerModel(
-      name: 'Dhuhr',
+      name: 'dhuhr'.tr(),
       time: '01:12 PM',
       icon: Icons.wb_sunny,
       isHighlighted: true,
     ),
-    PrayerModel(name: 'Asr', time: '04:38 PM', icon: Icons.wb_sunny),
-    PrayerModel(name: 'Maghrib', time: '07:22 PM', icon: Icons.wb_twilight),
-    PrayerModel(name: 'Isha', time: '08:44 PM', icon: Icons.nights_stay),
+    PrayerModel(name: 'asr'.tr(), time: '04:38 PM', icon: Icons.wb_sunny),
+    PrayerModel(name: 'maghrib'.tr(), time: '07:22 PM', icon: Icons.wb_twilight),
+    PrayerModel(name: 'isha'.tr(), time: '08:44 PM', icon: Icons.nights_stay),
   ];
 
   bool get _hasLocation => latitude != null && longitude != null;
 
   String get _locationLabel =>
-      "Lat: ${latitude!.toStringAsFixed(4)},  "
-      "Lng: ${longitude!.toStringAsFixed(4)}";
+      '${'lat_label'.tr()}${latitude!.toStringAsFixed(0)},  '
+      '${'lng_label'.tr()}${longitude!.toStringAsFixed(0)}';
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +81,7 @@ class _SectionHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Prayer Schedule',
+                'prayer_schedule'.tr(),
                 style: TextStyle(
                   color: AppColor.white,
                   fontSize: 20.sp,
@@ -91,7 +92,7 @@ class _SectionHeader extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(top: 4.h),
                   child: Text(
-                    'Method: $methodName',
+                    '${'method_label'.tr()}$methodName',
                     style: TextStyle(
                       color: AppColor.textSecondary,
                       fontSize: 11.sp,
@@ -109,7 +110,7 @@ class _SectionHeader extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: Text(
-            'Full Month',
+            'full_month'.tr(),
             style: TextStyle(
               color: AppColor.accentTeal,
               fontSize: 12.sp,

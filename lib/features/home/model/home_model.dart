@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
@@ -81,40 +82,40 @@ class AladhanPrayerTimesModel {
 
   List<PrayerModel> toHousePrayerModels(String? currentPrayer) => [
     PrayerModel(
-      name: 'Fajr',
+      name: 'fajr'.tr(),
       time: fajr,
       icon: Icons.wb_twilight,
-      isHighlighted: currentPrayer == 'Fajr',
+      isHighlighted: currentPrayer == 'fajr'.tr(),
     ),
     PrayerModel(
-      name: 'Sunrise',
+      name: 'sunrise'.tr(),
       time: sunrise,
       icon: Icons.wb_sunny,
-      isHighlighted: currentPrayer == 'Sunrise',
+      isHighlighted: currentPrayer == 'sunrise'.tr(),
     ),
     PrayerModel(
-      name: 'Dhuhr',
+      name: 'dhuhr'.tr(),
       time: dhuhr,
       icon: Icons.wb_sunny,
-      isHighlighted: currentPrayer == 'Dhuhr',
+      isHighlighted: currentPrayer == 'dhuhr'.tr(),
     ),
     PrayerModel(
-      name: 'Asr',
+      name: 'asr'.tr(),
       time: asr,
       icon: Icons.wb_sunny,
-      isHighlighted: currentPrayer == 'Asr',
+      isHighlighted: currentPrayer == 'asr'.tr(),
     ),
     PrayerModel(
-      name: 'Maghrib',
+      name: 'maghrib'.tr(),
       time: maghrib,
       icon: Icons.wb_twilight,
-      isHighlighted: currentPrayer == 'Maghrib',
+      isHighlighted: currentPrayer == 'maghrib'.tr(),
     ),
     PrayerModel(
-      name: 'Isha',
+      name: 'isha'.tr(),
       time: isha,
       icon: Icons.nights_stay,
-      isHighlighted: currentPrayer == 'Isha',
+      isHighlighted: currentPrayer == 'isha'.tr(),
     ),
   ];
 

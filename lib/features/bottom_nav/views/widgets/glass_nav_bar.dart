@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/constants/app_strings.dart';
 
 class NavItem {
   final IconData icon;
@@ -21,10 +21,10 @@ class GlassNavBar extends StatelessWidget {
   });
 
   static const _items = [
-    NavItem(icon: Icons.home_rounded, label: AppStrings.navHome),
-    NavItem(icon: Icons.search_rounded, label: AppStrings.navSearch),
-    NavItem(icon: Icons.favorite_rounded, label: AppStrings.navFavorites),
-    NavItem(icon: Icons.more_horiz_rounded, label: AppStrings.navMore),
+    NavItem(icon: Icons.home_rounded, label: 'nav_home'),
+    NavItem(icon: Icons.search_rounded, label: 'nav_search'),
+    NavItem(icon: Icons.favorite_rounded, label: 'nav_favorites'),
+    NavItem(icon: Icons.more_horiz_rounded, label: 'nav_more'),
   ];
 
   @override
@@ -114,7 +114,7 @@ class NavItemWidget extends StatelessWidget {
                     ? AppColor.primaryColor1
                     : AppColor.onSurfaceVariant,
               ),
-              child: Text(item.label),
+              child: Text(item.label.tr()),
             ),
           ],
         ),

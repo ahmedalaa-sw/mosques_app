@@ -1,20 +1,18 @@
-import 'dart:ui' show Color;
-
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Singleton service for local prayer notifications.
+import 'prayer_notification_config.dart';
+
+/// Singleton service for scheduling local prayer notifications.
 ///
-/// Two channels are used so each can have its own importance/sound:
-/// • [_preAlertChannelId] — 15-min warning (Importance.high)
-/// • [_atTimeChannelId] — at-prayer reminder (Importance.max)
-///
-/// Channel IDs are versioned (`_v2`) so that any settings change triggers a
-/// brand-new channel — Android freezes channel settings at creation time and
-/// ignores later code changes for an existing channel ID.
+/// Each prayer has two Android channels (call-only / call+azan merged).
+/// [schedulePrayerNotifications] picks the right channel based on [azanEnabled],
+/// so a single call is all callers need — no separate azan scheduling.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -24,135 +22,140 @@ class NotificationService {
 
   bool _initialized = false;
 
-  // ── Channels (versioned) ──────────────────────────────────────────────────
-  static const _preAlertChannelId = 'prayer_pre_alert_v2';
-  static const _preAlertChannelName = 'Prayer Pre-Alert';
-  static const _preAlertChannelDesc = 'Notifies 15 minutes before each prayer';
-
-  static const _atTimeChannelId = 'prayer_at_time_v2';
-  static const _atTimeChannelName = 'Prayer Time';
-  static const _atTimeChannelDesc = 'Notifies at the start of each prayer';
-
-  // ── Notification IDs ──────────────────────────────────────────────────────
-  static const _preAlertBaseId = 100; // 100..105
-  static const _atTimeBaseId = 200;   // 200..205
-  static const _maxPrayers = 6;
-
-  // Legacy channel kept around so we can clean up notifications scheduled
-  // against the previous (frozen) channel.
-  static const _legacyChannelId = 'prayer_times_channel';
+  // Cached path of the notification logo written to the temp dir on iOS.
+  // Null until init() completes or if caching fails (notifications still fire).
+  String? _iosImagePath;
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /// Initialise timezone data, the plugin, channels, and runtime permissions.
-  /// Safe to call multiple times — only the first call does the work.
+  /// Initialises timezone data, the plugin, all channels, and runtime
+  /// permissions. Safe to call multiple times — only the first call acts.
   Future<void> init() async {
     if (_initialized) return;
 
-    // Timezone setup.
     tz.initializeTimeZones();
     try {
-      final locationName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(locationName));
+      final name = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(name));
     } catch (_) {
       tz.setLocalLocation(tz.UTC);
     }
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
     await _plugin.initialize(
       const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
+        android: AndroidInitializationSettings('notification_logo'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        ),
       ),
       onDidReceiveNotificationResponse: _onTap,
     );
 
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
 
     if (android != null) {
-      // Drop the legacy channel so its frozen low-importance settings don't
-      // linger on devices that installed an older build.
-      await android.deleteNotificationChannel(_legacyChannelId);
+      for (final id in kLegacyChannelIds) {
+        await android.deleteNotificationChannel(id);
+      }
 
-      // Create channels explicitly — never rely on lazy creation.
       await android.createNotificationChannel(
         const AndroidNotificationChannel(
-          _preAlertChannelId,
-          _preAlertChannelName,
-          description: _preAlertChannelDesc,
+          kPreAlertChannelId,
+          kPreAlertChannelName,
+          description: kPreAlertChannelDesc,
           importance: Importance.high,
           playSound: true,
           enableVibration: true,
           enableLights: true,
         ),
       );
-      await android.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _atTimeChannelId,
-          _atTimeChannelName,
-          description: _atTimeChannelDesc,
-          importance: Importance.max,
-          playSound: true,
-          enableVibration: true,
-          enableLights: true,
-        ),
-      );
 
-      // Runtime permissions — required on Android 13+ and 12+ respectively.
+      for (final config in kPrayerConfigs.values) {
+        await android.createNotificationChannel(
+          AndroidNotificationChannel(
+            config.callChannelId,
+            config.channelName,
+            description: config.channelDescription,
+            importance: Importance.max,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound(config.callSound),
+            enableVibration: true,
+            enableLights: true,
+          ),
+        );
+        await android.createNotificationChannel(
+          AndroidNotificationChannel(
+            config.azanChannelId,
+            '${config.channelName} + Azan',
+            description: config.channelDescription,
+            importance: Importance.max,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound(config.azanSound),
+            enableVibration: true,
+            enableLights: true,
+          ),
+        );
+      }
+
       await android.requestNotificationsPermission();
       await android.requestExactAlarmsPermission();
     }
 
+    if (Platform.isIOS) await _cacheIosImage();
+
     _initialized = true;
   }
 
-  /// Cancels all previously scheduled prayer notifications, then schedules:
-  /// • a 15-min warning before each upcoming prayer (today)
-  /// • a notification at the start of each upcoming prayer (today)
+  /// Copies the notification logo from Flutter assets into the system temp
+  /// directory so iOS can attach it to delivered notifications.
+  /// Uses [Directory.systemTemp] — no extra packages required.
+  Future<void> _cacheIosImage() async {
+    try {
+      final file = File('${Directory.systemTemp.path}/notification_logo.png');
+      if (!file.existsSync()) {
+        final data = await rootBundle.load('assets/notification-logo.png');
+        await file.writeAsBytes(data.buffer.asUint8List());
+      }
+      _iosImagePath = file.path;
+    } catch (_) {
+      _iosImagePath = null; // notifications still fire without the image
+    }
+  }
+
+  /// Cancels all existing prayer notifications, then schedules:
+  /// - a 15-min pre-alert for each upcoming prayer (default system sound)
+  /// - an at-time notification for each upcoming prayer using either the
+  ///   call-only or the merged call+azan audio file, based on [azanEnabled]
   Future<void> schedulePrayerNotifications(
-    Map<String, DateTime> prayers,
-  ) async {
+    Map<String, DateTime> prayers, {
+    required bool azanEnabled,
+  }) async {
     if (!_initialized) {
       debugPrint('[NotificationService] Not initialized — skipping');
       return;
     }
 
-    await _cancelAllPrayerNotifications();
+    await _cancelAll();
 
     final now = DateTime.now();
-    debugPrint(
-      '[NotificationService] tz=${tz.local.name}, now=$now, prayers=$prayers',
-    );
-
-    int preId = _preAlertBaseId;
-    int atId = _atTimeBaseId;
+    int preId = kPreAlertBaseId;
+    int atId  = kAtTimeBaseId;
     int scheduled = 0;
 
     for (final entry in prayers.entries) {
       final name = entry.key;
       final time = entry.value;
 
-      // 15-min warning.
-      final notifyAt = time.subtract(const Duration(minutes: 15));
-      if (notifyAt.isAfter(now)) {
-        final tzWhen = tz.TZDateTime.from(notifyAt, tz.local);
-        debugPrint(
-          '[NotificationService] schedule pre-alert "$name" id=$preId at=$tzWhen',
-        );
+      final preTime = time.subtract(const Duration(minutes: 15));
+      if (preTime.isAfter(now)) {
         await _plugin.zonedSchedule(
           preId,
           '🕌 $name (${_arabic(name)}) in 15 minutes',
           'Get ready — $name starts at ${_fmt(time)}.',
-          tzWhen,
+          tz.TZDateTime.from(preTime, tz.local),
           _preAlertDetails(name),
           androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation:
@@ -162,18 +165,13 @@ class NotificationService {
         scheduled++;
       }
 
-      // At-prayer-time.
       if (time.isAfter(now)) {
-        final tzWhen = tz.TZDateTime.from(time, tz.local);
-        debugPrint(
-          '[NotificationService] schedule at-time "$name" id=$atId at=$tzWhen',
-        );
         await _plugin.zonedSchedule(
           atId,
           '🕌 $name (${_arabic(name)}) prayer time',
           "It's time for $name prayer — ${_fmt(time)}.",
-          tzWhen,
-          _atTimeDetails(name),
+          tz.TZDateTime.from(time, tz.local),
+          _atTimeDetails(name, azanEnabled: azanEnabled),
           androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
@@ -187,91 +185,110 @@ class NotificationService {
     }
 
     debugPrint(
-      '[NotificationService] Scheduled $scheduled notifications across '
-      '${prayers.length} prayers.',
+      '[NotificationService] Scheduled $scheduled notifications '
+      '(azan=${azanEnabled ? "on" : "off"})',
     );
   }
 
-  /// Shows an immediate test notification — useful for verifying that
-  /// channel/icon/permission setup actually works on the device.
-  Future<void> showTestNotification() async {
+  /// Shows an immediate test notification.
+  /// Uses the call-only or merged channel based on [azanEnabled] so the
+  /// correct audio plays — identical to a real prayer notification.
+  Future<void> showTestNotification({required bool azanEnabled}) async {
     await init();
     await _plugin.show(
       9999,
-      '🕌 Test prayer notification',
-      'If you see this on your home screen, notifications are working.',
-      _atTimeDetails('Test'),
+      '🕌 Test — ${azanEnabled ? "Call + Azan" : "Call only"}',
+      azanEnabled
+          ? 'Merged call + azan audio should play now.'
+          : 'Prayer call audio should play now.',
+      _atTimeDetails('Fajr', azanEnabled: azanEnabled),
     );
   }
 
   // ── Notification details ──────────────────────────────────────────────────
 
-  NotificationDetails _preAlertDetails(String prayerName) => NotificationDetails(
+  NotificationDetails _preAlertDetails(String name) => NotificationDetails(
         android: AndroidNotificationDetails(
-          _preAlertChannelId,
-          _preAlertChannelName,
-          channelDescription: _preAlertChannelDesc,
+          kPreAlertChannelId,
+          kPreAlertChannelName,
+          channelDescription: kPreAlertChannelDesc,
           importance: Importance.high,
           priority: Priority.high,
           category: AndroidNotificationCategory.reminder,
           visibility: NotificationVisibility.public,
-          icon: 'ic_stat_notification',
-          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-          color: const Color(0xFF84D5C5), // AppColor.primaryColor1
+          icon: 'notification_logo',
+          color: const Color(0xFF84D5C5),
           colorized: true,
           styleInformation: BigTextStyleInformation(
-            'Get ready — $prayerName prayer is in 15 minutes.',
-            contentTitle: '🕌 $prayerName (${_arabic(prayerName)}) in 15 min',
+            'Get ready — $name prayer is in 15 minutes.',
+            contentTitle: '🕌 $name (${_arabic(name)}) in 15 min',
           ),
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
           interruptionLevel: InterruptionLevel.timeSensitive,
+          attachments: _iosImagePath != null
+              ? [DarwinNotificationAttachment(_iosImagePath!)]
+              : null,
         ),
       );
 
-  NotificationDetails _atTimeDetails(String prayerName) => NotificationDetails(
-        android: AndroidNotificationDetails(
-          _atTimeChannelId,
-          _atTimeChannelName,
-          channelDescription: _atTimeChannelDesc,
-          importance: Importance.max,
-          priority: Priority.max,
-          category: AndroidNotificationCategory.reminder,
-          visibility: NotificationVisibility.public,
-          icon: 'ic_stat_notification',
-          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-          color: const Color(0xFFE9C349), // AppColor.secondaryColor (gold)
-          colorized: true,
-          styleInformation: BigTextStyleInformation(
-            "It's time for $prayerName prayer.",
-            contentTitle: '🕌 $prayerName (${_arabic(prayerName)})',
-          ),
+  NotificationDetails _atTimeDetails(
+    String name, {
+    required bool azanEnabled,
+  }) {
+    final config = kPrayerConfigs[name] ?? kFallbackPrayerConfig;
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        config.channelId(azanEnabled: azanEnabled),
+        config.channelDisplayName(azanEnabled: azanEnabled),
+        channelDescription: config.channelDescription,
+        importance: Importance.max,
+        priority: Priority.max,
+        category: AndroidNotificationCategory.reminder,
+        visibility: NotificationVisibility.public,
+        icon: 'notification_logo',
+        color: const Color(0xFFE9C349),
+        colorized: true,
+        sound: RawResourceAndroidNotificationSound(
+          config.sound(azanEnabled: azanEnabled),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          interruptionLevel: InterruptionLevel.timeSensitive,
+        styleInformation: BigTextStyleInformation(
+          "It's time for $name prayer.",
+          contentTitle: '🕌 $name (${_arabic(name)})',
         ),
-      );
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        sound: config.sound(azanEnabled: azanEnabled),
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        attachments: _iosImagePath != null
+            ? [DarwinNotificationAttachment(_iosImagePath!)]
+            : null,
+      ),
+    );
+  }
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  Future<void> _cancelAllPrayerNotifications() async {
-    for (int i = _preAlertBaseId; i < _preAlertBaseId + _maxPrayers; i++) {
+  Future<void> _cancelAll() async {
+    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers; i++) {
       await _plugin.cancel(i);
     }
-    for (int i = _atTimeBaseId; i < _atTimeBaseId + _maxPrayers; i++) {
+    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers; i++) {
+      await _plugin.cancel(i);
+    }
+    // Cancel old azan IDs (300–305) from the previous two-step architecture.
+    for (int i = 300; i < 306; i++) {
       await _plugin.cancel(i);
     }
   }
 
   static void _onTap(NotificationResponse response) {
-    // Tapping the notification launches the app via the default activity.
-    // Hook into routing here once a deep-link target is decided.
     debugPrint('[NotificationService] Tapped: ${response.payload}');
   }
 
@@ -279,16 +296,5 @@ class NotificationService {
       '${dt.hour.toString().padLeft(2, '0')}:'
       '${dt.minute.toString().padLeft(2, '0')}';
 
-  String _arabic(String name) {
-    const map = {
-      'Fajr': 'الفجر',
-      'Sunrise': 'الشروق',
-      'Dhuhr': 'الظهر',
-      'Asr': 'العصر',
-      'Maghrib': 'المغرب',
-      'Isha': 'العشاء',
-      'Test': 'اختبار',
-    };
-    return map[name] ?? name;
-  }
+  String _arabic(String name) => kArabicNames[name] ?? name;
 }

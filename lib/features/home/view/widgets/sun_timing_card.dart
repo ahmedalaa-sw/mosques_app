@@ -48,6 +48,7 @@ class SunTimingCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
+            fontFamily: 'IBMPlexSansArabic',
             color: AppColor.onSurfaceVariant,
             fontSize: 10.sp,
             letterSpacing: 1,
@@ -57,6 +58,7 @@ class SunTimingCard extends StatelessWidget {
         Text(
           time,
           style: TextStyle(
+            fontFamily: 'IBMPlexSansArabic',
             color: AppColor.onSurface,
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,

@@ -1,8 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/core/routing/routes.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_cubit.dart';
@@ -47,9 +47,9 @@ class MosqueSearchScreen extends StatelessWidget {
               child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
                 builder: (context, state) {
                   if (state is MosqueSearchLocating) {
-                    return const MosqueStatusMessage(
+                    return MosqueStatusMessage(
                       icon: Icons.my_location_rounded,
-                      label: AppStrings.findingLocation,
+                      label: 'finding_location'.tr(),
                     );
                   }
                   if (state is MosqueSearchLoading) {

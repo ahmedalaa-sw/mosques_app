@@ -95,7 +95,7 @@ class _HeroBackground extends StatelessWidget {
                 Text(
                   mosque.arabicName!,
                   style: TextStyle(
-                    fontFamily: 'Nunito',
+                    fontFamily: 'IBMPlexSansArabic',
                     fontSize: 14.sp,
                     color: AppColor.primaryColor,
                     letterSpacing: 0.5,

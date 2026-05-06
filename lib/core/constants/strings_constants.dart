@@ -49,11 +49,22 @@ class StringsConstants {
 
   // ── Settings ──
   static const String settings = 'Settings';
+  static const String settingsAndMore = 'Settings & More';
+  static const String settingsSubtitle = 'Customize your spiritual journey and\nmanage your preferences.';
   static const String darkMode = 'Dark Mode';
   static const String lightMode = 'Light Mode';
+  static const String themeMode = 'Theme Mode';
   static const String language = 'Language';
   static const String aboutApp = 'About Al-Masjid';
   static const String contactUs = 'Contact Us';
+  static const String preferences = 'Preferences';
+  static const String helpAndInfo = 'Help & Info';
+  static const String supportCenter = 'Support Center';
+  static const String privacyPolicy = 'Privacy Policy';
+  static const String signOut = 'Sign Out';
+  static const String version = 'Version 2.4.1 (Emerald)';
+  static const String versionTag = 'Made with peace in digital gardens';
+  static const String selectLanguage = 'SELECT LANGUAGE';
 
   // ── Legacy map (kept for backward compatibility) ──
   static const Map<String, String> en = {
