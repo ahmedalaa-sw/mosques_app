@@ -92,6 +92,7 @@ class BackgroundRescheduleService {
 
   static const _prefsLat = 'last_known_lat';
   static const _prefsLng = 'last_known_lng';
+  static const _prefsAzanKey = 'azan_enabled';
 
   // Must match NotificationService — this isolate is separate so we cannot
   // share constants via instance access without re-creating the channels.
@@ -99,6 +100,13 @@ class BackgroundRescheduleService {
   static const _preAlertChannelName = 'Prayer Pre-Alert';
   static const _preAlertChannelDesc =
       'Notifies 15 minutes before each prayer';
+
+  static const _azanChannelId = 'prayer_azan_v2';
+  static const _azanChannelName = 'Azan';
+  static const _azanChannelDesc = 'Plays the full azan after prayer call';
+
+  static const _azanBaseId = 300; // 300..305
+  static const Duration _azanDelay = Duration(seconds: 8);
 
   static const _legacyChannelIds = [
     'prayer_times_channel',
@@ -182,6 +190,19 @@ class BackgroundRescheduleService {
           ),
         );
       }
+
+      await android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _azanChannelId,
+          _azanChannelName,
+          description: _azanChannelDesc,
+          importance: Importance.high,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('azan'),
+          enableVibration: true,
+          enableLights: true,
+        ),
+      );
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -238,6 +259,9 @@ class BackgroundRescheduleService {
     for (int i = 200; i < 206; i++) {
       await plugin.cancel(i);
     }
+    for (int i = 300; i < 306; i++) {
+      await plugin.cancel(i);
+    }
 
     final now = DateTime.now();
     int id15 = 100;
@@ -280,8 +304,35 @@ class BackgroundRescheduleService {
       idAt++;
     }
 
+    // Schedule azan notifications if enabled.
+    final azanEnabled = prefs.getBool(_prefsAzanKey) ?? false;
+    if (azanEnabled) {
+      int idAzan = _azanBaseId;
+      for (final entry in prayers.entries) {
+        final name = entry.key;
+        final time = entry.value;
+
+        final azanTime = time.add(_azanDelay);
+        if (!azanTime.isBefore(now)) {
+          await plugin.zonedSchedule(
+            idAzan,
+            '🕌 ${_arabic(name)} — Azan',
+            'Azan for $name prayer.',
+            tz.TZDateTime.from(azanTime, tz.local),
+            _azanDetails(name),
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            payload: 'azan:$name',
+          );
+        }
+        idAzan++;
+      }
+    }
+
     dev.log(
-      '[BackgroundReschedule] Done — rescheduled ${prayers.length} prayers',
+      '[BackgroundReschedule] Done — rescheduled ${prayers.length} prayers, '
+      'azan=${azanEnabled ? "on" : "off"}',
     );
     return true;
   }
@@ -346,6 +397,35 @@ class BackgroundRescheduleService {
       ),
     );
   }
+
+  static NotificationDetails _azanDetails(String name) => NotificationDetails(
+        android: AndroidNotificationDetails(
+          _azanChannelId,
+          _azanChannelName,
+          channelDescription: _azanChannelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.reminder,
+          visibility: NotificationVisibility.public,
+          icon: 'ic_stat_notification',
+          largeIcon:
+              const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          color: const Color(0xFF1B5E45),
+          colorized: true,
+          sound: const RawResourceAndroidNotificationSound('azan'),
+          styleInformation: BigTextStyleInformation(
+            'Azan for $name prayer.',
+            contentTitle: '🕌 ${_arabic(name)} — Azan',
+          ),
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          sound: 'azan',
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
+      );
 
   static String _fmt(DateTime dt) =>
       '${dt.hour.toString().padLeft(2, '0')}:'

@@ -6,6 +6,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/constants/app_style.dart';
 import 'package:mosques_app/core/routing/routes.dart';
+import 'package:mosques_app/features/more/viewmodels/azan_cubit.dart';
+import 'package:mosques_app/features/more/viewmodels/azan_state.dart';
 import 'package:mosques_app/features/more/viewmodels/theme_cubit.dart';
 import 'package:mosques_app/features/more/viewmodels/theme_state.dart';
 
@@ -220,7 +222,7 @@ class _PreferencesGroup extends StatelessWidget {
         _SectionLabel(title: 'preferences'.tr()),
         SizedBox(height: 12.h),
         _SectionCard(
-          children: [_LanguageRow(), _DividerLine(), _ThemeToggleRow()],
+          children: [_LanguageRow(), _DividerLine(), _ThemeToggleRow(), _DividerLine(), _AzanToggleRow()],
         ),
       ],
     );
@@ -401,6 +403,76 @@ class _VersionFooter extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AzanToggleRow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      child: Row(
+        children: [
+          Icon(Icons.notifications_active,
+              color: AppColor.primaryColor1, size: 24.sp),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Text(
+              'azan_sound'.tr(),
+              style: AppStyle.medium16.copyWith(color: AppColor.onSurface),
+            ),
+          ),
+          BlocBuilder<AzanCubit, AzanState>(
+            builder: (context, state) {
+              return _AzanSwitch(
+                value: state.isAzanEnabled,
+                onChanged: (_) =>
+                    context.read<AzanCubit>().toggleAzan(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AzanSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _AzanSwitch({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        width: 48.w,
+        height: 24.h,
+        decoration: BoxDecoration(
+          color: value ? AppColor.primaryContainer : AppColor.outlineVariant,
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 16.w,
+            height: 16.h,
+            margin: EdgeInsets.symmetric(horizontal: 4.w),
+            decoration: BoxDecoration(
+              color: AppColor.primaryColor1,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

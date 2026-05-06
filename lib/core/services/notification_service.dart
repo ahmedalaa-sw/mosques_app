@@ -93,10 +93,18 @@ class NotificationService {
     soundResource: 'fajr_call',
   );
 
+  // ── Azan channel (shared, plays azan.mp3) ──────────────────────────────────
+  static const _azanChannelId = 'prayer_azan_v2';
+  static const _azanChannelName = 'Azan';
+  static const _azanChannelDesc = 'Plays the full azan after prayer call';
+
   // ── Notification IDs ──────────────────────────────────────────────────────
   static const _preAlertBaseId = 100; // 100..105
-  static const _atTimeBaseId = 200; // 200..205
+  static const _atTimeBaseId = 200;   // 200..205
+  static const _azanBaseId = 300;     // 300..305
   static const _maxPrayers = 6;
+
+  static const Duration _azanDelay = Duration(seconds: 8);
 
   // Legacy channels to delete on init.
   static const _legacyChannelIds = [
@@ -174,6 +182,20 @@ class NotificationService {
           ),
         );
       }
+
+      // Create the azan channel (plays the full azan sound).
+      await android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _azanChannelId,
+          _azanChannelName,
+          description: _azanChannelDesc,
+          importance: Importance.high,
+          playSound: true,
+          sound: RawResourceAndroidNotificationSound('azan'),
+          enableVibration: true,
+          enableLights: true,
+        ),
+      );
 
       // Runtime permissions — required on Android 13+ and 12+ respectively.
       await android.requestNotificationsPermission();
@@ -335,6 +357,94 @@ class NotificationService {
     );
   }
 
+  NotificationDetails _azanDetails(String prayerName) => NotificationDetails(
+        android: AndroidNotificationDetails(
+          _azanChannelId,
+          _azanChannelName,
+          channelDescription: _azanChannelDesc,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.reminder,
+          visibility: NotificationVisibility.public,
+          icon: 'ic_stat_notification',
+          largeIcon:
+              const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          color: const Color(0xFF1B5E45),
+          colorized: true,
+          sound: const RawResourceAndroidNotificationSound('azan'),
+          styleInformation: BigTextStyleInformation(
+            'Azan for $prayerName prayer.',
+            contentTitle: '🕌 ${_arabic(prayerName)} — Azan',
+          ),
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          sound: 'azan',
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
+      );
+
+  // ── Azan (full call to prayer) ────────────────────────────────────────────
+
+  /// Schedules an azan notification 8 seconds after each prayer call.
+  /// Only call this when the user has enabled the azan preference.
+  Future<void> scheduleAzanNotifications(
+    Map<String, DateTime> prayers,
+  ) async {
+    if (!_initialized) {
+      debugPrint('[NotificationService] Not initialized — skipping azan');
+      return;
+    }
+
+    await cancelAzanNotifications();
+
+    final now = DateTime.now();
+    int azanId = _azanBaseId;
+    int scheduled = 0;
+
+    for (final entry in prayers.entries) {
+      final name = entry.key;
+      final time = entry.value;
+
+      // Azan fires 8 seconds after the prayer call.
+      final azanTime = time.add(_azanDelay);
+      if (azanTime.isAfter(now)) {
+        final tzWhen = tz.TZDateTime.from(azanTime, tz.local);
+        debugPrint(
+          '[NotificationService] schedule azan "$name" id=$azanId at=$tzWhen',
+        );
+        await _plugin.zonedSchedule(
+          azanId,
+          '🕌 ${_arabic(name)} — Azan',
+          'Azan for $name prayer.',
+          tzWhen,
+          _azanDetails(name),
+          androidScheduleMode: AndroidScheduleMode.alarmClock,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          payload: 'azan:$name',
+        );
+        scheduled++;
+      }
+
+      azanId++;
+    }
+
+    debugPrint(
+      '[NotificationService] Scheduled $scheduled azan notifications across '
+      '${prayers.length} prayers.',
+    );
+  }
+
+  /// Cancels all scheduled azan notifications.
+  Future<void> cancelAzanNotifications() async {
+    for (int i = _azanBaseId; i < _azanBaseId + _maxPrayers; i++) {
+      await _plugin.cancel(i);
+    }
+  }
+
   // ── Private helpers ───────────────────────────────────────────────────────
 
   Future<void> _cancelAllPrayerNotifications() async {
@@ -342,6 +452,9 @@ class NotificationService {
       await _plugin.cancel(i);
     }
     for (int i = _atTimeBaseId; i < _atTimeBaseId + _maxPrayers; i++) {
+      await _plugin.cancel(i);
+    }
+    for (int i = _azanBaseId; i < _azanBaseId + _maxPrayers; i++) {
       await _plugin.cancel(i);
     }
   }

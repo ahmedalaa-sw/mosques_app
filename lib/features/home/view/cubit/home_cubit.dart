@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
@@ -6,6 +5,7 @@ import 'package:mosques_app/core/services/background_reschedule_service.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
@@ -153,8 +153,9 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   /// Convert prayer time strings to today's DateTimes and hand them to the
-  /// [NotificationService] for 15-min-before scheduling.
-  void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) {
+  /// [NotificationService] for scheduling. Uses English canonical keys so
+  /// the notification service can look up per-prayer channels and sounds.
+  void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) async {
     final today = DateTime.now();
 
     DateTime _toDateTime(String hhmm) {
@@ -165,14 +166,22 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     final prayers = <String, DateTime>{
-      'fajr'.tr(): _toDateTime(prayerTimes.fajr),
-      'sunrise'.tr(): _toDateTime(prayerTimes.sunrise),
-      'dhuhr'.tr(): _toDateTime(prayerTimes.dhuhr),
-      'asr'.tr(): _toDateTime(prayerTimes.asr),
-      'maghrib'.tr(): _toDateTime(prayerTimes.maghrib),
-      'isha'.tr(): _toDateTime(prayerTimes.isha),
+      'Fajr': _toDateTime(prayerTimes.fajr),
+      'Sunrise': _toDateTime(prayerTimes.sunrise),
+      'Dhuhr': _toDateTime(prayerTimes.dhuhr),
+      'Asr': _toDateTime(prayerTimes.asr),
+      'Maghrib': _toDateTime(prayerTimes.maghrib),
+      'Isha': _toDateTime(prayerTimes.isha),
     };
 
     NotificationService.instance.schedulePrayerNotifications(prayers);
+
+    final prefs = await SharedPreferences.getInstance();
+    final azanEnabled = prefs.getBool('azan_enabled') ?? false;
+    if (azanEnabled) {
+      NotificationService.instance.scheduleAzanNotifications(prayers);
+    } else {
+      NotificationService.instance.cancelAzanNotifications();
+    }
   }
 }

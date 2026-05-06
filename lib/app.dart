@@ -6,6 +6,8 @@ import 'core/cubit/time_format_cubit.dart';
 import 'core/routing/app_router.dart';
 import 'core/routing/routes.dart';
 import 'core/theme/app_theme.dart';
+import 'features/more/viewmodels/azan_cubit.dart';
+import 'features/more/viewmodels/azan_state.dart';
 import 'features/more/viewmodels/theme_cubit.dart';
 import 'features/more/viewmodels/theme_state.dart';
 
@@ -19,6 +21,7 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => TimeFormatCubit()..init()),
         BlocProvider(create: (_) => ThemeCubit()),
+        BlocProvider(create: (_) => AzanCubit()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
