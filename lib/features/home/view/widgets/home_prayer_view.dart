@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
 import 'package:mosques_app/features/home/view/cubit/home_state.dart';
 import 'package:mosques_app/features/home/view/widgets/loaded_view.dart';
@@ -17,9 +18,16 @@ class HomePrayerView extends StatelessWidget {
         return switch (state) {
           HomeInitial() || HomeLoading() => const LoadingView(),
 
-          HomeLoaded(:final prayerTimes, :final prayers) => LoadedView(
-              prayerTimes: prayerTimes,
-              prayers: prayers,
+          HomeLoaded(:final prayerTimes, :final prayers) => RefreshIndicator(
+              onRefresh: () => context.read<HomeCubit>().refreshPrayerTimes(),
+              color: AppColor.secondaryColor,
+              backgroundColor: AppColor.primaryColor,
+              strokeWidth: 2.5,
+              displacement: 40,
+              child: LoadedView(
+                prayerTimes: prayerTimes,
+                prayers: prayers,
+              ),
             ),
 
           HomePermissionDenied(:final message) => PermissionDeniedView(
@@ -33,7 +41,6 @@ class HomePrayerView extends StatelessWidget {
               onRetry: () => context.read<HomeCubit>().refreshPrayerTimes(),
             ),
 
-          // Exhaustive fallback — should never be reached with sealed classes.
           _ => const LoadingView(),
         };
       },

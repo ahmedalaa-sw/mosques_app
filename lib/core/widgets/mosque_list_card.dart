@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
@@ -180,12 +181,12 @@ class _StatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badges = <Widget>[
-      _Chip(label: statusLabel, color: statusColor),
+      _Chip(label: statusLabel.tr(), color: statusColor),
     ];
 
     for (final amenity in amenities) {
       badges.add(
-        _Chip(label: amenity.toUpperCase(), color: AppColor.onSurfaceVariant),
+        _Chip(label: amenity.tr(), color: AppColor.onSurfaceVariant),
       );
     }
 

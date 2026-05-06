@@ -1,9 +1,9 @@
 import 'dart:ui';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/strings_constants.dart';
 import '../../../../core/cubit/time_format_cubit.dart';
 import '../../../../core/extensions/time_format_helper.dart';
 
@@ -13,11 +13,11 @@ class PrayerTimesCard extends StatelessWidget {
   const PrayerTimesCard({super.key, required this.prayerTimes});
 
   static const List<Map<String, dynamic>> _prayerMeta = [
-    {'key': 'Fajr', 'label': StringsConstants.fajr, 'icon': Icons.brightness_3_rounded},
-    {'key': 'Dhuhr', 'label': StringsConstants.dhuhr, 'icon': Icons.wb_sunny_rounded},
-    {'key': 'Asr', 'label': StringsConstants.asr, 'icon': Icons.wb_twilight_rounded},
-    {'key': 'Maghrib', 'label': StringsConstants.maghrib, 'icon': Icons.nights_stay_rounded},
-    {'key': 'Isha', 'label': StringsConstants.isha, 'icon': Icons.bedtime_rounded},
+    {'key': 'Fajr', 'label': 'fajr', 'icon': Icons.brightness_3_rounded},
+    {'key': 'Dhuhr', 'label': 'dhuhr', 'icon': Icons.wb_sunny_rounded},
+    {'key': 'Asr', 'label': 'asr', 'icon': Icons.wb_twilight_rounded},
+    {'key': 'Maghrib', 'label': 'maghrib', 'icon': Icons.nights_stay_rounded},
+    {'key': 'Isha', 'label': 'isha', 'icon': Icons.bedtime_rounded},
   ];
 
   @override
@@ -57,7 +57,7 @@ class PrayerTimesCard extends StatelessWidget {
                     children: [
                       _PrayerTimeRow(
                         icon: meta['icon'] as IconData,
-                        label: meta['label'] as String,
+                        label: (meta['label'] as String).tr(),
                         time: time,
                       ),
                       if (!isLast)
@@ -97,7 +97,7 @@ class _CardHeader extends StatelessWidget {
         ),
         SizedBox(width: 12.w),
         Text(
-          StringsConstants.todayPrayers,
+          'today_prayers'.tr(),
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,

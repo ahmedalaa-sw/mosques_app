@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
@@ -59,6 +60,7 @@ class PrayerCountdownCard extends StatelessWidget {
           Text(
             currentPrayerName,
             style: TextStyle(
+              fontFamily: 'IBMPlexSansArabic',
               color: AppColor.accentTeal,
               fontSize: 36.sp,
               fontWeight: FontWeight.w600,
@@ -75,8 +77,9 @@ class PrayerCountdownCard extends StatelessWidget {
               border: Border.all(color: AppColor.badgeGold, width: 1),
             ),
             child: Text(
-              'ONGOING',
+              'ongoing'.tr(),
               style: TextStyle(
+                fontFamily: 'IBMPlexSansArabic',
                 color: AppColor.badgeGold,
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w600,
@@ -88,8 +91,9 @@ class PrayerCountdownCard extends StatelessWidget {
 
           // ── "Next: X in" label ────────────────────────────────────────────
           Text(
-            'Next: $nextPrayerName in',
+            '${'next_prayer'.tr()}$nextPrayerName in',
             style: TextStyle(
+              fontFamily: 'IBMPlexSansArabic',
               color: AppColor.textSecondary,
               fontSize: 13.sp,
             ),
@@ -102,6 +106,7 @@ class PrayerCountdownCard extends StatelessWidget {
           Text(
             formattedCountdown,
             style: TextStyle(
+              fontFamily: 'IBMPlexSansArabic',
               color: AppColor.white,
               fontSize: countdownFontSize,
               fontWeight: FontWeight.w700,

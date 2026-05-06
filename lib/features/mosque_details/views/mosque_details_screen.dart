@@ -1,8 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/strings_constants.dart';
 import '../viewmodels/mosque_details_cubit.dart';
 import '../viewmodels/mosque_details_state.dart';
 import 'widgets/mosque_about_card.dart';
@@ -122,7 +122,7 @@ class _ErrorView extends StatelessWidget {
             ),
             SizedBox(height: 16.h),
             Text(
-              StringsConstants.error,
+              'error'.tr(),
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
@@ -148,7 +148,7 @@ class _ErrorView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(50.r),
                 ),
                 child: Text(
-                  StringsConstants.retry,
+                  'retry'.tr(),
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:arabic_search/arabic_search.dart';
@@ -16,21 +17,47 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   final MosqueSearchRepo _repo;
 
   List<MosqueModel> _all = [];
+  Position? _lastFetchPosition;
+  StreamSubscription<Position>? _positionSubscription;
 
   static const _kCachedLat = AppConstants.cachedLat;
   static const _kCachedLng = AppConstants.cachedLng;
   static const _kCachedMosques = AppConstants.cachedMosques;
   static const _kLocationThresholdMeters = AppConstants.locationThresholdMeters;
+  static const _kStreamDistanceFilter =
+      AppConstants.locationStreamDistanceFilterMeters;
 
   MosqueSearchCubit()
     : _locationService = LocationService(),
       _repo = MosqueSearchRepo(),
       super(MosqueSearchInitial());
 
+  /// Starts continuous location tracking and triggers an immediate initial load.
+  ///
+  /// Idempotent — calling again while already tracking is a no-op.
+  /// On each OS-filtered position update (every [_kStreamDistanceFilter] m),
+  /// checks if the user has moved more than [_kLocationThresholdMeters] from
+  /// the last fetch point; if so, re-fetches from the API automatically.
+  Future<void> startTracking() async {
+    if (_positionSubscription != null) return;
+
+    _positionSubscription = _locationService
+        .getPositionStream(distanceFilter: _kStreamDistanceFilter)
+        .listen(_onPositionUpdate, onError: _onStreamError);
+
+    await loadMosques();
+  }
+
+  void stopTracking() {
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+  }
+
   Future<void> loadMosques() async {
     try {
       emit(MosqueSearchLocating());
       final position = await _locationService.getCurrentLocation();
+      _lastFetchPosition = position;
 
       final cached = await _tryLoadFromCache(position);
       if (cached != null) {
@@ -51,6 +78,38 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     } catch (e) {
       emit(MosqueSearchError(e.toString()));
     }
+  }
+
+  void _onPositionUpdate(Position position) {
+    // Guard: don't interrupt an ongoing locate / fetch.
+    if (state is MosqueSearchLocating || state is MosqueSearchLoading) return;
+
+    if (_lastFetchPosition == null) {
+      loadMosques();
+      return;
+    }
+
+    final distance = Geolocator.distanceBetween(
+      _lastFetchPosition!.latitude,
+      _lastFetchPosition!.longitude,
+      position.latitude,
+      position.longitude,
+    );
+
+    debugPrint(
+      '[MosqueSearchCubit] Position update — '
+      'moved ${distance.toStringAsFixed(1)} m from last fetch '
+      '(threshold: $_kLocationThresholdMeters m)',
+    );
+
+    if (distance >= _kLocationThresholdMeters) {
+      debugPrint('[MosqueSearchCubit] Threshold exceeded — re-fetching mosques');
+      loadMosques();
+    }
+  }
+
+  void _onStreamError(Object error) {
+    debugPrint('[MosqueSearchCubit] Position stream error: $error');
   }
 
   Future<List<MosqueModel>?> _tryLoadFromCache(Position pos) async {
@@ -78,7 +137,8 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     );
 
     debugPrint(
-      '🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  (threshold: ${_kLocationThresholdMeters.toInt()} m)',
+      '🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  '
+      '(threshold: ${_kLocationThresholdMeters.toInt()} m)',
     );
 
     if (distance >= _kLocationThresholdMeters) {
@@ -111,7 +171,8 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       ),
     ]);
     debugPrint(
-      '💾 [Cache] Saved ${mosques.length} mosques at lat:${pos.latitude}, lng:${pos.longitude}',
+      '💾 [Cache] Saved ${mosques.length} mosques at '
+      'lat:${pos.latitude}, lng:${pos.longitude}',
     );
   }
 
@@ -130,5 +191,11 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
         )
         .toList();
     emit(MosqueSearchSuccess(filtered));
+  }
+
+  @override
+  Future<void> close() {
+    _positionSubscription?.cancel();
+    return super.close();
   }
 }

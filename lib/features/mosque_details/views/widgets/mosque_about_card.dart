@@ -1,8 +1,8 @@
 import 'dart:ui';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/strings_constants.dart';
 
 class MosqueAboutCard extends StatelessWidget {
   final List<String> amenities;
@@ -38,7 +38,7 @@ class MosqueAboutCard extends StatelessWidget {
               children: [
                 _SectionLabel(
                   icon: Icons.accessibility_new_rounded,
-                  title: StringsConstants.supports,
+                  title: 'supports'.tr(),
                 ),
                 SizedBox(height: 10.h),
                 if (amenities.isNotEmpty)
@@ -46,7 +46,7 @@ class MosqueAboutCard extends StatelessWidget {
                     spacing: 8.w,
                     runSpacing: 8.h,
                     children: amenities
-                        .map((amenity) => _AmenityChip(label: amenity))
+                        .map((amenity) => _AmenityChip(amenityKey: amenity))
                         .toList(),
                   )
                 else
@@ -60,7 +60,7 @@ class MosqueAboutCard extends StatelessWidget {
                 // Location row
                 _SectionLabel(
                   icon: Icons.location_on_rounded,
-                  title: StringsConstants.location,
+                  title: 'location'.tr(),
                 ),
                 SizedBox(height: 10.h),
                 Text(
@@ -81,7 +81,7 @@ class MosqueAboutCard extends StatelessWidget {
                   SizedBox(height: 20.h),
                   _SectionLabel(
                     icon: Icons.info_outline_rounded,
-                    title: StringsConstants.about,
+                    title: 'about'.tr(),
                   ),
                   SizedBox(height: 10.h),
                   Text(
@@ -126,7 +126,7 @@ class _AmenitiesUnavailableCard extends StatelessWidget {
           SizedBox(width: 10.w),
           Expanded(
             child: Text(
-              StringsConstants.amenitiesNotAvailable,
+              'amenities_not_available'.tr(),
               style: TextStyle(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w500,
@@ -141,9 +141,9 @@ class _AmenitiesUnavailableCard extends StatelessWidget {
 }
 
 class _AmenityChip extends StatelessWidget {
-  final String label;
+  final String amenityKey;
 
-  const _AmenityChip({required this.label});
+  const _AmenityChip({required this.amenityKey});
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +159,10 @@ class _AmenityChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_amenityIcon(label), size: 16.sp, color: AppColor.primaryColor),
+          Icon(_amenityIcon(amenityKey), size: 16.sp, color: AppColor.primaryColor),
           SizedBox(width: 8.w),
           Text(
-            label,
+            amenityKey.tr(),
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: FontWeight.w500,
@@ -175,14 +175,14 @@ class _AmenityChip extends StatelessWidget {
   }
 
   IconData _amenityIcon(String amenity) {
-    switch (amenity.toLowerCase()) {
-      case 'accessible':
+    switch (amenity) {
+      case 'amenity_accessible':
         return Icons.accessible_rounded;
-      case 'parking':
+      case 'amenity_parking':
         return Icons.local_parking_rounded;
-      case 'prayer room':
+      case 'amenity_prayer_room':
         return Icons.mosque_rounded;
-      case 'wudu':
+      case 'amenity_wudu':
         return Icons.water_drop_rounded;
       default:
         return Icons.check_circle_outline_rounded;

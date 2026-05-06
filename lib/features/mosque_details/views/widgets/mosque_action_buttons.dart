@@ -1,9 +1,9 @@
 import 'dart:ui';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/strings_constants.dart';
 import '../../../../core/functions/snakebar_function.dart';
 import '../../models/mosque_detail_model.dart';
 
@@ -23,7 +23,7 @@ class MosqueActionButtons extends StatelessWidget {
             flex: 3,
             child: _PrimaryActionButton(
               icon: Icons.directions_rounded,
-              label: StringsConstants.getDirections,
+              label: 'directions'.tr(),
               onTap: () => _openDirections(context),
             ),
           ),
@@ -33,7 +33,7 @@ class MosqueActionButtons extends StatelessWidget {
               flex: 2,
               child: _SecondaryActionButton(
                 icon: Icons.call_rounded,
-                label: StringsConstants.callMosque,
+                label: 'call'.tr(),
                 onTap: () {
                   // TODO: launch tel: URL
                 },
@@ -46,7 +46,7 @@ class MosqueActionButtons extends StatelessWidget {
               flex: 2,
               child: _SecondaryActionButton(
                 icon: Icons.language_rounded,
-                label: StringsConstants.website,
+                label: 'website'.tr(),
                 onTap: () {
                   // TODO: launch website URL
                 },
@@ -86,7 +86,7 @@ class MosqueActionButtons extends StatelessWidget {
     if (context.mounted) {
       snackBarMessage(
         context: context,
-        text: StringsConstants.openMapsError,
+        text: 'open_maps_error'.tr(),
       );
     }
   }

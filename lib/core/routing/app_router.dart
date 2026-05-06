@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mosques_app/core/routing/routes.dart';
 import 'package:mosques_app/features/bottom_nav/views/bottom_nav_screen.dart';
 import 'package:mosques_app/features/home/view/home_screen.dart';
+import 'package:mosques_app/features/more/views/about_us_screen.dart';
+import 'package:mosques_app/features/more/views/contact_us_screen.dart';
+import 'package:mosques_app/features/more/views/localization_screen.dart';
+import 'package:mosques_app/features/more/views/theme_screen.dart';
 import 'package:mosques_app/features/mosque_details/repo/mosque_details_repo.dart';
 import 'package:mosques_app/features/mosque_details/viewmodels/mosque_details_cubit.dart';
 import 'package:mosques_app/features/mosque_details/views/mosque_details_screen.dart';
@@ -18,6 +22,14 @@ class AppRouter {
       // return _createRoute(FavScreen());
       case Routes.more:
       // return _createRoute(MoreScreen());
+      case Routes.aboutUs:
+        return _createRoute(const AboutUsScreen());
+      case Routes.localization:
+        return _createRoute(const LocalizationScreen());
+      case Routes.themeMode:
+        return _createRoute(const ThemeScreen());
+      case Routes.contactUs:
+        return _createRoute(const ContactUsScreen());
       case Routes.mosqueDetails:
         final args = settings.arguments;
         final preview = args is MosqueModel ? args : null;

@@ -1,39 +1,43 @@
 import 'package:mosques_app/features/home/model/home_model.dart';
 
-/// Base class for home screen states
 abstract class HomeState {
   const HomeState();
 }
 
-/// Initial state - no data loaded yet
 class HomeInitial extends HomeState {
   const HomeInitial();
 }
 
-/// Loading state - fetching prayer times
 class HomeLoading extends HomeState {
   const HomeLoading();
 }
 
-/// Success state - prayer times loaded successfully
 class HomeLoaded extends HomeState {
   final AladhanPrayerTimesModel prayerTimes;
   final List<PrayerModel> prayers;
 
-  const HomeLoaded({required this.prayerTimes, required this.prayers});
+  // Included in equality so that a prayer transition (same data, different
+  // active prayer) is treated as a new state and triggers BlocBuilder rebuilds.
+  final String? currentPrayerName;
+
+  const HomeLoaded({
+    required this.prayerTimes,
+    required this.prayers,
+    this.currentPrayerName,
+  });
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is HomeLoaded &&
           runtimeType == other.runtimeType &&
-          prayerTimes == other.prayerTimes;
+          prayerTimes == other.prayerTimes &&
+          currentPrayerName == other.currentPrayerName;
 
   @override
-  int get hashCode => prayerTimes.hashCode;
+  int get hashCode => prayerTimes.hashCode ^ currentPrayerName.hashCode;
 }
 
-/// Error state - failed to load prayer times
 class HomeError extends HomeState {
   final String message;
   final int? statusCode;
@@ -52,7 +56,6 @@ class HomeError extends HomeState {
   int get hashCode => message.hashCode ^ statusCode.hashCode;
 }
 
-/// Permission denied state - location permission was denied
 class HomePermissionDenied extends HomeState {
   final String message;
 
