@@ -7,7 +7,6 @@ import 'core/routing/app_router.dart';
 import 'core/routing/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'features/more/viewmodels/azan_cubit.dart';
-import 'features/more/viewmodels/azan_state.dart';
 import 'features/more/viewmodels/theme_cubit.dart';
 import 'features/more/viewmodels/theme_state.dart';
 

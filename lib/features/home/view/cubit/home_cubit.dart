@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
@@ -158,7 +158,7 @@ class HomeCubit extends Cubit<HomeState> {
   void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) async {
     final today = DateTime.now();
 
-    DateTime _toDateTime(String hhmm) {
+    DateTime toDateTime(String hhmm) {
       final parts = hhmm.split(':');
       final h = int.tryParse(parts[0]) ?? 0;
       final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
@@ -166,12 +166,12 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     final prayers = <String, DateTime>{
-      'Fajr': _toDateTime(prayerTimes.fajr),
-      'Sunrise': _toDateTime(prayerTimes.sunrise),
-      'Dhuhr': _toDateTime(prayerTimes.dhuhr),
-      'Asr': _toDateTime(prayerTimes.asr),
-      'Maghrib': _toDateTime(prayerTimes.maghrib),
-      'Isha': _toDateTime(prayerTimes.isha),
+      'Fajr': toDateTime(prayerTimes.fajr),
+      'Sunrise': toDateTime(prayerTimes.sunrise),
+      'Dhuhr': toDateTime(prayerTimes.dhuhr),
+      'Asr': toDateTime(prayerTimes.asr),
+      'Maghrib': toDateTime(prayerTimes.maghrib),
+      'Isha': toDateTime(prayerTimes.isha),
     };
 
     NotificationService.instance.schedulePrayerNotifications(prayers);

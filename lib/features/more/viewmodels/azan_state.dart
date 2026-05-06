@@ -1,10 +1,8 @@
-import 'package:equatable/equatable.dart';
-
-class AzanState extends Equatable {
+class AzanState {
   final bool isAzanEnabled;
 
   const AzanState({this.isAzanEnabled = false});
 
-  @override
-  List<Object?> get props => [isAzanEnabled];
+  AzanState copyWith({bool? isAzanEnabled}) =>
+      AzanState(isAzanEnabled: isAzanEnabled ?? this.isAzanEnabled);
 }

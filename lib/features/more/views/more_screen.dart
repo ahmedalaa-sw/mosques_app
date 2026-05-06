@@ -222,7 +222,13 @@ class _PreferencesGroup extends StatelessWidget {
         _SectionLabel(title: 'preferences'.tr()),
         SizedBox(height: 12.h),
         _SectionCard(
-          children: [_LanguageRow(), _DividerLine(), _ThemeToggleRow(), _DividerLine(), _AzanToggleRow()],
+          children: [
+            _LanguageRow(),
+            _DividerLine(),
+            // _ThemeToggleRow(),
+            _DividerLine(),
+            _AzanToggleRow(),
+          ],
         ),
       ],
     );
@@ -260,73 +266,73 @@ class _LanguageRow extends StatelessWidget {
   }
 }
 
-class _ThemeToggleRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      child: Row(
-        children: [
-          Icon(Icons.dark_mode, color: AppColor.primaryColor1, size: 24.sp),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Text(
-              'theme_mode'.tr(),
-              style: AppStyle.medium16.copyWith(color: AppColor.onSurface),
-            ),
-          ),
-          BlocBuilder<ThemeCubit, ThemeState>(
-            builder: (context, state) {
-              return _ThemeSwitch(
-                value: state.isDark,
-                onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
+// class _ThemeToggleRow extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       width: double.infinity,
+//       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+//       child: Row(
+//         children: [
+//           Icon(Icons.dark_mode, color: AppColor.primaryColor1, size: 24.sp),
+//           SizedBox(width: 16.w),
+//           Expanded(
+//             child: Text(
+//               'theme_mode'.tr(),
+//               style: AppStyle.medium16.copyWith(color: AppColor.onSurface),
+//             ),
+//           ),
+//           BlocBuilder<ThemeCubit, ThemeState>(
+//             builder: (context, state) {
+//               return _ThemeSwitch(
+//                 value: state.isDark,
+//                 onChanged: (_) => context.read<ThemeCubit>().toggleTheme(),
+//               );
+//             },
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
-class _ThemeSwitch extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
+// class _ThemeSwitch extends StatelessWidget {
+//   final bool value;
+//   final ValueChanged<bool> onChanged;
 
-  const _ThemeSwitch({required this.value, required this.onChanged});
+//   const _ThemeSwitch({required this.value, required this.onChanged});
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: 48.w,
-        height: 24.h,
-        decoration: BoxDecoration(
-          color: value ? AppColor.primaryContainer : AppColor.outlineVariant,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: AnimatedAlign(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            width: 16.w,
-            height: 16.h,
-            margin: EdgeInsets.symmetric(horizontal: 4.w),
-            decoration: BoxDecoration(
-              color: AppColor.primaryColor1,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: () => onChanged(!value),
+//       child: AnimatedContainer(
+//         duration: const Duration(milliseconds: 250),
+//         curve: Curves.easeInOut,
+//         width: 48.w,
+//         height: 24.h,
+//         decoration: BoxDecoration(
+//           color: value ? AppColor.primaryContainer : AppColor.outlineVariant,
+//           borderRadius: BorderRadius.circular(12.r),
+//         ),
+//         child: AnimatedAlign(
+//           duration: const Duration(milliseconds: 250),
+//           curve: Curves.easeInOut,
+//           alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+//           child: Container(
+//             width: 16.w,
+//             height: 16.h,
+//             margin: EdgeInsets.symmetric(horizontal: 4.w),
+//             decoration: BoxDecoration(
+//               color: AppColor.primaryColor1,
+//               shape: BoxShape.circle,
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class _HelpInfoGroup extends StatelessWidget {
   @override
@@ -415,8 +421,11 @@ class _AzanToggleRow extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       child: Row(
         children: [
-          Icon(Icons.notifications_active,
-              color: AppColor.primaryColor1, size: 24.sp),
+          Icon(
+            Icons.notifications_active,
+            color: AppColor.primaryColor1,
+            size: 24.sp,
+          ),
           SizedBox(width: 16.w),
           Expanded(
             child: Text(
@@ -428,8 +437,7 @@ class _AzanToggleRow extends StatelessWidget {
             builder: (context, state) {
               return _AzanSwitch(
                 value: state.isAzanEnabled,
-                onChanged: (_) =>
-                    context.read<AzanCubit>().toggleAzan(),
+                onChanged: (_) => context.read<AzanCubit>().toggleAzan(),
               );
             },
           ),
