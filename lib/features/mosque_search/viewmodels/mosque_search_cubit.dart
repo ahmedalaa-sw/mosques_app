@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:arabic_search/arabic_search.dart';
+import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -76,8 +78,25 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       _all = mosques;
       emit(MosqueSearchSuccess(_all));
     } catch (e) {
-      emit(MosqueSearchError(e.toString()));
+      final (message, canRetry) = _parseError(e);
+      emit(MosqueSearchError(message, canRetry: canRetry));
     }
+  }
+
+  (String, bool) _parseError(Object error) {
+    if (error is DioException) {
+      return switch (error.type) {
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.receiveTimeout =>
+          ('search_timeout'.tr(), true),
+        DioExceptionType.connectionError => ('search_no_internet'.tr(), true),
+        DioExceptionType.badResponse => ('search_server_error'.tr(), false),
+        _ => ('search_timeout'.tr(), true),
+      };
+    }
+    // Location / permission errors already have user-friendly messages.
+    return (error.toString(), true);
   }
 
   void _onPositionUpdate(Position position) {

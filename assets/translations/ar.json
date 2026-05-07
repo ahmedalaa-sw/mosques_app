@@ -89,6 +89,9 @@
   "error": "حدث خطأ ما",
   "retry": "إعادة المحاولة",
   "no_data": "لا توجد بيانات",
+  "search_timeout": "انتهت مهلة الطلب. تحقق من اتصالك وحاول مجددًا.",
+  "search_no_internet": "لا يوجد اتصال بالإنترنت. تحقق من شبكتك.",
+  "search_server_error": "خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقًا.",
 
   "location_services_disabled": "خدمات الموقع معطّلة. يرجى تفعيل GPS.",
   "location_permission_denied": "تم رفض إذن الموقع.",

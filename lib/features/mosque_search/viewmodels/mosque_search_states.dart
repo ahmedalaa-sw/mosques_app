@@ -15,5 +15,6 @@ class MosqueSearchSuccess extends MosqueSearchState {
 
 class MosqueSearchError extends MosqueSearchState {
   final String message;
-  MosqueSearchError(this.message);
+  final bool canRetry;
+  MosqueSearchError(this.message, {this.canRetry = true});
 }

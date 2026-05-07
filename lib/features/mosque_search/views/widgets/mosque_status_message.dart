@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
@@ -5,11 +6,13 @@ import 'package:mosques_app/core/constants/app_colors.dart';
 class MosqueStatusMessage extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback? onRetry;
 
   const MosqueStatusMessage({
     super.key,
     required this.icon,
     required this.label,
+    this.onRetry,
   });
 
   @override
@@ -31,6 +34,17 @@ class MosqueStatusMessage extends StatelessWidget {
               ),
             ),
           ),
+          if (onRetry != null) ...[
+            SizedBox(height: 20.h),
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: Icon(Icons.refresh_rounded, size: 18.sp),
+              label: Text('retry'.tr(), style: TextStyle(fontSize: 14.sp)),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColor.primaryColor,
+              ),
+            ),
+          ],
         ],
       ),
     );

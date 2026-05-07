@@ -89,6 +89,9 @@
   "error": "Something went wrong",
   "retry": "Retry",
   "no_data": "No data available",
+  "search_timeout": "Request timed out. Please check your connection and try again.",
+  "search_no_internet": "No internet connection. Please check your network.",
+  "search_server_error": "Server error. Please try again later.",
 
   "location_services_disabled": "Location services are disabled. Please enable GPS.",
   "location_permission_denied": "Location permission was denied.",

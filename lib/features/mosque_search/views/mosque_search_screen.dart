@@ -68,8 +68,11 @@ class MosqueSearchScreen extends StatelessWidget {
                   }
                   if (state is MosqueSearchError) {
                     return MosqueStatusMessage(
-                      icon: Icons.location_off_rounded,
+                      icon: Icons.wifi_off_rounded,
                       label: state.message,
+                      onRetry: state.canRetry
+                          ? () => context.read<MosqueSearchCubit>().loadMosques()
+                          : null,
                     );
                   }
                   return const SizedBox.shrink();
