@@ -152,7 +152,7 @@ class BackgroundRescheduleService {
       }
     }
 
-    final prayerTimes = AdhanPrayerService.calculatePrayerTimes(
+    final prayerTimes = await AdhanPrayerService.calculatePrayerTime(
       latitude: latitude,
       longitude: longitude,
     );

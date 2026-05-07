@@ -38,7 +38,7 @@ class AzanCubit extends Cubit<AzanState> {
       final lng = prefs.getDouble(_prefsLng);
       if (lat == null || lng == null) return;
 
-      final rawTimes = AdhanPrayerService.calculatePrayerTimes(
+      final rawTimes = await AdhanPrayerService.calculatePrayerTime(
         latitude: lat,
         longitude: lng,
       );
