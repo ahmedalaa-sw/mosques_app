@@ -33,13 +33,7 @@ class NotificationService {
   Future<void> init() async {
     if (_initialized) return;
 
-    tz.initializeTimeZones();
-    try {
-      final name = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(name));
-    } catch (_) {
-      tz.setLocalLocation(tz.UTC);
-    }
+    await _initTimezone();
 
     await _plugin.initialize(
       const InitializationSettings(
@@ -111,7 +105,6 @@ class NotificationService {
 
   /// Copies the notification logo from Flutter assets into the system temp
   /// directory so iOS can attach it to delivered notifications.
-  /// Uses [Directory.systemTemp] — no extra packages required.
   Future<void> _cacheIosImage() async {
     try {
       final file = File('${Directory.systemTemp.path}/notification_logo.png');
@@ -121,7 +114,7 @@ class NotificationService {
       }
       _iosImagePath = file.path;
     } catch (_) {
-      _iosImagePath = null; // notifications still fire without the image
+      _iosImagePath = null;
     }
   }
 
@@ -129,8 +122,12 @@ class NotificationService {
   /// - a 15-min pre-alert for each upcoming prayer (default system sound)
   /// - an at-time notification for each upcoming prayer using either the
   ///   call-only or the merged call+azan audio file, based on [azanEnabled]
+  ///
+  /// [prayerDays] — ordered list of day maps (index 0 = today, 1 = tomorrow …).
+  /// Each map: prayer name → scheduled DateTime (local time).
+  /// Supports up to [kDaysToSchedule] days.
   Future<void> schedulePrayerNotifications(
-    Map<String, DateTime> prayers, {
+    List<Map<String, DateTime>> prayerDays, {
     required bool azanEnabled,
   }) async {
     if (!_initialized) {
@@ -141,58 +138,60 @@ class NotificationService {
     await _cancelAll();
 
     final now = DateTime.now();
-    int preId = kPreAlertBaseId;
-    int atId  = kAtTimeBaseId;
     int scheduled = 0;
 
-    for (final entry in prayers.entries) {
-      final name = entry.key;
-      final time = entry.value;
+    for (int dayIndex = 0; dayIndex < prayerDays.length; dayIndex++) {
+      final prayers = prayerDays[dayIndex];
+      int preId = kPreAlertBaseId + (dayIndex * kMaxPrayers);
+      int atId  = kAtTimeBaseId  + (dayIndex * kMaxPrayers);
 
-      final preTime = time.subtract(const Duration(minutes: 15));
-      if (preTime.isAfter(now)) {
-        await _plugin.zonedSchedule(
-          preId,
-          '🕌 $name (${_arabic(name)}) in 15 minutes',
-          'Get ready — $name starts at ${_fmt(time)}.',
-          tz.TZDateTime.from(preTime, tz.local),
-          _preAlertDetails(name),
-          androidScheduleMode: AndroidScheduleMode.alarmClock,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          payload: 'pre_alert:$name',
-        );
-        scheduled++;
+      for (final entry in prayers.entries) {
+        final name = entry.key;
+        final time = entry.value;
+
+        final preTime = time.subtract(const Duration(minutes: 15));
+        if (preTime.isAfter(now)) {
+          await _plugin.zonedSchedule(
+            preId,
+            '🕌 $name (${_arabic(name)}) in 15 minutes',
+            'Get ready — $name starts at ${_fmt(time)}.',
+            tz.TZDateTime.from(preTime, tz.local),
+            _preAlertDetails(name),
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            payload: 'pre_alert:$name',
+          );
+          scheduled++;
+        }
+
+        if (time.isAfter(now)) {
+          await _plugin.zonedSchedule(
+            atId,
+            '🕌 $name (${_arabic(name)}) prayer time',
+            "It's time for $name prayer — ${_fmt(time)}.",
+            tz.TZDateTime.from(time, tz.local),
+            _atTimeDetails(name, azanEnabled: azanEnabled),
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            payload: 'at_time:$name',
+          );
+          scheduled++;
+        }
+
+        preId++;
+        atId++;
       }
-
-      if (time.isAfter(now)) {
-        await _plugin.zonedSchedule(
-          atId,
-          '🕌 $name (${_arabic(name)}) prayer time',
-          "It's time for $name prayer — ${_fmt(time)}.",
-          tz.TZDateTime.from(time, tz.local),
-          _atTimeDetails(name, azanEnabled: azanEnabled),
-          androidScheduleMode: AndroidScheduleMode.alarmClock,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          payload: 'at_time:$name',
-        );
-        scheduled++;
-      }
-
-      preId++;
-      atId++;
     }
 
     debugPrint(
       '[NotificationService] Scheduled $scheduled notifications '
-      '(azan=${azanEnabled ? "on" : "off"})',
+      '(azan=${azanEnabled ? "on" : "off"}, days=${prayerDays.length})',
     );
   }
 
   /// Shows an immediate test notification.
-  /// Uses the call-only or merged channel based on [azanEnabled] so the
-  /// correct audio plays — identical to a real prayer notification.
   Future<void> showTestNotification({required bool azanEnabled}) async {
     await init();
     await _plugin.show(
@@ -273,13 +272,104 @@ class NotificationService {
     );
   }
 
+  // ── Timezone initialisation ───────────────────────────────────────────────
+
+  /// Initialises the timezone package database and sets [tz.local].
+  ///
+  /// Strategy (each step is tried only if the previous one fails):
+  /// 1. flutter_timezone IANA name  — accurate, DST-aware
+  /// 2. UTC-offset-based IANA name  — covers the common plugin-failure case
+  /// 3. UTC                         — last resort; notifications fire but at
+  ///                                  wrong local time until next app open
+  static Future<void> _initTimezone() async {
+    tz.initializeTimeZones();
+
+    // 1 — preferred: IANA name from flutter_timezone
+    try {
+      final name = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(name));
+      return;
+    } catch (e) {
+      debugPrint('[NotificationService] FlutterTimezone failed ($e) — trying offset fallback');
+    }
+
+    // 2 — fallback: derive a representative IANA name from the device's UTC offset
+    try {
+      final offset = DateTime.now().timeZoneOffset;
+      final name = _ianaFromOffset(offset);
+      tz.setLocalLocation(tz.getLocation(name));
+      debugPrint('[NotificationService] Timezone fallback: $name (offset ${offset.inMinutes} min)');
+      return;
+    } catch (_) {}
+
+    // 3 — last resort
+    debugPrint('[NotificationService] WARNING: using UTC — notifications may fire at wrong local time');
+    tz.setLocalLocation(tz.UTC);
+  }
+
+  /// Returns a representative IANA timezone name for the given UTC [offset].
+  /// Finds the closest match (in minutes) from a curated table that covers
+  /// every standard UTC offset including half-hour and 45-minute zones.
+  static String _ianaFromOffset(Duration offset) {
+    const table = <int, String>{
+      -720: 'Etc/GMT+12',
+      -660: 'Pacific/Pago_Pago',
+      -600: 'Pacific/Honolulu',
+      -570: 'Pacific/Marquesas',
+      -540: 'America/Anchorage',
+      -480: 'America/Los_Angeles',
+      -420: 'America/Denver',
+      -360: 'America/Chicago',
+      -300: 'America/New_York',
+      -240: 'America/Halifax',
+      -210: 'America/St_Johns',
+      -180: 'America/Sao_Paulo',
+      -120: 'Atlantic/South_Georgia',
+      -60:  'Atlantic/Azores',
+         0: 'Europe/London',
+        60: 'Europe/Paris',
+       120: 'Africa/Cairo',
+       180: 'Asia/Riyadh',
+       210: 'Asia/Tehran',
+       240: 'Asia/Dubai',
+       270: 'Asia/Kabul',
+       300: 'Asia/Karachi',
+       330: 'Asia/Kolkata',
+       345: 'Asia/Kathmandu',
+       360: 'Asia/Dhaka',
+       390: 'Asia/Yangon',
+       420: 'Asia/Bangkok',
+       480: 'Asia/Shanghai',
+       525: 'Australia/Eucla',
+       540: 'Asia/Tokyo',
+       570: 'Australia/Darwin',
+       600: 'Australia/Sydney',
+       630: 'Australia/Lord_Howe',
+       660: 'Pacific/Noumea',
+       720: 'Pacific/Auckland',
+       765: 'Pacific/Chatham',
+       780: 'Pacific/Apia',
+       840: 'Pacific/Kiritimati',
+    };
+
+    final minutes = offset.inMinutes;
+    if (table.containsKey(minutes)) return table[minutes]!;
+
+    // Pick nearest entry by absolute distance
+    final nearest = table.keys.reduce(
+      (a, b) => (a - minutes).abs() <= (b - minutes).abs() ? a : b,
+    );
+    return table[nearest]!;
+  }
+
   // ── Private helpers ───────────────────────────────────────────────────────
 
   Future<void> _cancelAll() async {
-    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers; i++) {
+    // Cancel today + tomorrow slots for both pre-alert and at-time
+    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers * kDaysToSchedule; i++) {
       await _plugin.cancel(i);
     }
-    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers; i++) {
+    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers * kDaysToSchedule; i++) {
       await _plugin.cancel(i);
     }
     // Cancel old azan IDs (300–305) from the previous two-step architecture.

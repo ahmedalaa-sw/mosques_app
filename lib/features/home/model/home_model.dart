@@ -53,10 +53,6 @@ class AladhanPrayerTimesModel {
     // ✅ تعريف المتغير واستخدام القيمة الافتراضية إذا لم يتم تمرير methodName
     final finalMethodName = methodName ?? AdhanPrayerService.defaultMethodName;
 
-    print('Raw Fajr (UTC offset): ${prayerTimes.fajr}');
-    print('Raw Fajr hour: ${prayerTimes.fajr?.hour}');
-    print('Local timezone offset: ${DateTime.now().timeZoneOffset}');
-
     return AladhanPrayerTimesModel(
       fajr: _fmt(prayerTimes.fajr),
       sunrise: _fmt(prayerTimes.sunrise),

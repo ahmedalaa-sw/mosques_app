@@ -3,7 +3,11 @@ import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationUtils {
-  static const _countryKey = 'cached_country_code';
+  /// Exposed so background services and cubits can read the cached value
+  /// directly from SharedPreferences without going through geocoding.
+  static const countryCodePrefsKey = 'cached_country_code';
+
+  static const _countryKey = countryCodePrefsKey;
   static const _latKey = 'cached_lat';
   static const _lngKey = 'cached_lng';
 
@@ -84,13 +88,17 @@ class LocationUtils {
     }
 
     /// 🌐 fallback → geocoding (مرة واحدة)
-    final placemarks = await placemarkFromCoordinates(lat, lng);
-    final code = placemarks.first.isoCountryCode ?? 'US';
-
-    await prefs.setString(_countryKey, code);
-    await prefs.setDouble(_latKey, lat);
-    await prefs.setDouble(_lngKey, lng);
-
-    return code;
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      final code = placemarks.isNotEmpty
+          ? (placemarks.first.isoCountryCode ?? 'US')
+          : 'US';
+      await prefs.setString(_countryKey, code);
+      await prefs.setDouble(_latKey, lat);
+      await prefs.setDouble(_lngKey, lng);
+      return code;
+    } catch (_) {
+      return 'US';
+    }
   }
 }

@@ -16,7 +16,8 @@ class HomePrayerView extends StatelessWidget {
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {
         return switch (state) {
-          HomeInitial() || HomeLoading() => const LoadingView(),
+          HomeInitial() => const SizedBox.expand(),
+          HomeLoading() => const LoadingView(),
 
           HomeLoaded(:final prayerTimes, :final prayers) => RefreshIndicator(
               onRefresh: () => context.read<HomeCubit>().refreshPrayerTimes(),
