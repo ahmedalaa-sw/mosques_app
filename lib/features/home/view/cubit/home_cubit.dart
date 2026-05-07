@@ -25,19 +25,23 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
   Future<void> loadPrayerTimes() async {
     try {
-      emit(const HomeLoading());
+      final hadCache = await _tryInstantLoadFromCache();
+
+      if (!hadCache) emit(const HomeLoading());
 
       bool hasPermission = await repository.hasLocationPermission();
       if (!hasPermission) {
         bool granted = await repository.requestLocationPermission();
         if (!granted) {
-          emit(
-            const HomePermissionDenied(
-              message:
-                  'Location permission is required to display prayer times. '
-                  'Please enable it in app settings.',
-            ),
-          );
+          if (!hadCache) {
+            emit(
+              const HomePermissionDenied(
+                message:
+                    'Location permission is required to display prayer times. '
+                    'Please enable it in app settings.',
+              ),
+            );
+          }
           return;
         }
       }
@@ -45,29 +49,76 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       final result = await repository.getPrayerTimesForCurrentLocation();
       result.fold(
         (failure) {
-          if (failure is ServerFailure && failure.statusCode == 403) {
-            emit(HomePermissionDenied(message: failure.message));
-          } else {
-            emit(
-              HomeError(
-                message: failure.message,
-                statusCode: failure is ServerFailure
-                    ? failure.statusCode
-                    : null,
-              ),
-            );
+          if (!hadCache) {
+            if (failure is ServerFailure && failure.statusCode == 403) {
+              emit(HomePermissionDenied(message: failure.message));
+            } else {
+              emit(
+                HomeError(
+                  message: failure.message,
+                  statusCode: failure is ServerFailure
+                      ? failure.statusCode
+                      : null,
+                ),
+              );
+            }
           }
         },
         (prayerTimes) => _onLoaded(prayerTimes),
       );
     } catch (e) {
-      emit(
-        HomeError(
-          message: e.toString().replaceFirst('Exception: ', ''),
-          statusCode: null,
+      if (state is! HomeLoaded) {
+        emit(
+          HomeError(
+            message: e.toString().replaceFirst('Exception: ', ''),
+            statusCode: null,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Instantly shows prayer times from cached location without any GPS call.
+  /// Returns true if cached coordinates existed and data was emitted.
+  Future<bool> _tryInstantLoadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble(BackgroundRescheduleService.prefsLat);
+      final lng = prefs.getDouble(BackgroundRescheduleService.prefsLng);
+      if (lat == null || lng == null) return false;
+
+      final countryCode =
+          prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+      final prayerTimes = AdhanPrayerService.calculatePrayerTimesSync(
+        latitude: lat,
+        longitude: lng,
+        countryCode: countryCode,
+      );
+      _onCacheLoaded(
+        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
+          prayerTimes: prayerTimes,
+          latitude: lat,
+          longitude: lng,
         ),
       );
+      return true;
+    } catch (_) {
+      return false;
     }
+  }
+
+  /// Lightweight display-only load from cache: emits state and schedules the
+  /// prayer timer, but skips notification scheduling and location caching
+  /// (those run once fresh GPS data arrives in [_onLoaded]).
+  void _onCacheLoaded(AladhanPrayerTimesModel prayerTimes) {
+    _loadedPrayerTimes = prayerTimes;
+    final currentPrayer = _getCurrentPrayerName(prayerTimes);
+    emit(HomeLoaded(
+      prayerTimes: prayerTimes,
+      prayers: prayerTimes.toHousePrayerModels(currentPrayer),
+      currentPrayerName: currentPrayer,
+    ));
+    _scheduleNextPrayerTransition(prayerTimes);
   }
 
   Future<void> refreshPrayerTimes() => loadPrayerTimes();

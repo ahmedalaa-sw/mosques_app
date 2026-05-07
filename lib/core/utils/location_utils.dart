@@ -88,13 +88,17 @@ class LocationUtils {
     }
 
     /// 🌐 fallback → geocoding (مرة واحدة)
-    final placemarks = await placemarkFromCoordinates(lat, lng);
-    final code = placemarks.first.isoCountryCode ?? 'US';
-
-    await prefs.setString(_countryKey, code);
-    await prefs.setDouble(_latKey, lat);
-    await prefs.setDouble(_lngKey, lng);
-
-    return code;
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      final code = placemarks.isNotEmpty
+          ? (placemarks.first.isoCountryCode ?? 'US')
+          : 'US';
+      await prefs.setString(_countryKey, code);
+      await prefs.setDouble(_latKey, lat);
+      await prefs.setDouble(_lngKey, lng);
+      return code;
+    } catch (_) {
+      return 'US';
+    }
   }
 }

@@ -32,8 +32,8 @@ void rescheduleCallbackDispatcher() {
 class BackgroundRescheduleService {
   BackgroundRescheduleService._();
 
-  static const _prefsLat     = 'last_known_lat';
-  static const _prefsLng     = 'last_known_lng';
+  static const prefsLat      = 'last_known_lat';
+  static const prefsLng      = 'last_known_lng';
   static const _prefsAzanKey = 'azan_enabled';
 
   static Future<void> registerTasks() async {
@@ -55,8 +55,8 @@ class BackgroundRescheduleService {
 
   static Future<void> cacheLastLocation(double lat, double lng) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_prefsLat, lat);
-    await prefs.setDouble(_prefsLng, lng);
+    await prefs.setDouble(prefsLat, lat);
+    await prefs.setDouble(prefsLng, lng);
   }
 
   // ── Core background work ──────────────────────────────────────────────────
@@ -122,8 +122,8 @@ class BackgroundRescheduleService {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final lat = prefs.getDouble(_prefsLat);
-    final lng = prefs.getDouble(_prefsLng);
+    final lat = prefs.getDouble(prefsLat);
+    final lng = prefs.getDouble(prefsLng);
 
     double latitude, longitude;
     if (lat != null && lng != null) {
