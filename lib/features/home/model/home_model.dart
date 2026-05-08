@@ -16,8 +16,6 @@ class PrayerModel {
   });
 }
 
-/// Prayer times model produced by offline adhan_dart calculations.
-/// Works worldwide — no network dependency.
 class AladhanPrayerTimesModel {
   final String fajr;
   final String sunrise;
@@ -49,74 +47,80 @@ class AladhanPrayerTimesModel {
     required double longitude,
     String? methodName,
   }) {
-    // ✅ تعريف المتغير واستخدام القيمة الافتراضية إذا لم يتم تمرير methodName
-    final finalMethodName = methodName ?? AdhanPrayerService.defaultMethodName;
-
-    print('Raw Fajr (UTC offset): ${prayerTimes.fajr}');
-    print('Raw Fajr hour: ${prayerTimes.fajr?.hour}');
-    print('Local timezone offset: ${DateTime.now().timeZoneOffset}');
+    // Pre-compute the device's UTC offset once for all prayers.
+    // adhan_dart returns DateTime values that are UTC but may be flagged
+    // as isUtc=false (plain DateTime with UTC hour/minute values).
+    // Calling .toLocal() on a non-UTC-flagged DateTime is a NO-OP in Dart,
+    // so we manually add the device's timezone offset instead.
+    // This is the only approach that works reliably regardless of how
+    // adhan_dart internally flags its returned DateTimes.
+    final offset = DateTime.now().timeZoneOffset;
 
     return AladhanPrayerTimesModel(
-      fajr: _fmt(prayerTimes.fajr),
-      sunrise: _fmt(prayerTimes.sunrise),
-      dhuhr: _fmt(prayerTimes.dhuhr),
-      asr: _fmt(prayerTimes.asr),
-      maghrib: _fmt(prayerTimes.maghrib),
-      isha: _fmt(prayerTimes.isha),
+      fajr: _fmt(prayerTimes.fajr, offset),
+      sunrise: _fmt(prayerTimes.sunrise, offset),
+      dhuhr: _fmt(prayerTimes.dhuhr, offset),
+      asr: _fmt(prayerTimes.asr, offset),
+      maghrib: _fmt(prayerTimes.maghrib, offset),
+      isha: _fmt(prayerTimes.isha, offset),
       latitude: latitude,
       longitude: longitude,
       date: DateTime.now(),
-      methodName: finalMethodName,
+      methodName: methodName ?? AdhanPrayerService.defaultMethodName,
     );
   }
 
-  /// Converts UTC DateTime from adhan_dart to local time, then formats as HH:mm.
-  static String _fmt(DateTime? t) {
+  // ── FIX 2: add timezone offset manually instead of calling .toLocal() ─────
+  // adhan_dart docs: "prayer times will be DateTime instances in UTC values."
+  // However, the returned DateTimes are NOT always flagged as isUtc=true,
+  // which makes Dart's .toLocal() treat them as already-local (NO-OP).
+  // Adding the offset Duration directly gives us the correct local time
+  // regardless of how the library flags the returned DateTime.
+  static String _fmt(DateTime? t, Duration offset) {
     if (t == null) return '00:00';
-    // .toLocal() is the critical call — adhan_dart gives UTC, we need local.
-    final local = t.toLocal();
+    final local = t.add(offset);
     return '${local.hour.toString().padLeft(2, '0')}:'
         '${local.minute.toString().padLeft(2, '0')}';
   }
 
   List<PrayerModel> toHousePrayerModels(String? currentPrayer) => [
-    PrayerModel(
-      name: 'Fajr',
-      time: fajr,
-      icon: Icons.wb_twilight,
-      isHighlighted: currentPrayer == 'Fajr',
-    ),
-    PrayerModel(
-      name: 'Sunrise',
-      time: sunrise,
-      icon: Icons.wb_sunny,
-      isHighlighted: currentPrayer == 'Sunrise',
-    ),
-    PrayerModel(
-      name: 'Dhuhr',
-      time: dhuhr,
-      icon: Icons.wb_sunny,
-      isHighlighted: currentPrayer == 'Dhuhr',
-    ),
-    PrayerModel(
-      name: 'Asr',
-      time: asr,
-      icon: Icons.wb_sunny,
-      isHighlighted: currentPrayer == 'Asr',
-    ),
-    PrayerModel(
-      name: 'Maghrib',
-      time: maghrib,
-      icon: Icons.wb_twilight,
-      isHighlighted: currentPrayer == 'Maghrib',
-    ),
-    PrayerModel(
-      name: 'Isha',
-      time: isha,
-      icon: Icons.nights_stay,
-      isHighlighted: currentPrayer == 'Isha',
-    ),
-  ];
+        PrayerModel(
+          name: 'Fajr',
+          time: fajr,
+          icon: Icons.wb_twilight,
+          isHighlighted: currentPrayer == 'Fajr',
+        ),
+        PrayerModel(
+          name: 'Sunrise',
+          time: sunrise,
+          icon: Icons.wb_sunny,
+          isHighlighted: currentPrayer == 'Sunrise',
+        ),
+        PrayerModel(
+          name: 'Dhuhr',
+          time: dhuhr,
+          icon: Icons.wb_sunny,
+          isHighlighted: currentPrayer == 'Dhuhr',
+        ),
+        PrayerModel(
+          name: 'Asr',
+          time: asr,
+          icon: Icons.wb_sunny,
+          isHighlighted: currentPrayer == 'Asr',
+        ),
+        PrayerModel(
+          name: 'Maghrib',
+          time: maghrib,
+          icon: Icons.wb_twilight,
+          isHighlighted: currentPrayer == 'Maghrib',
+        ),
+        PrayerModel(
+          name: 'Isha',
+          time: isha,
+          icon: Icons.nights_stay,
+          isHighlighted: currentPrayer == 'Isha',
+        ),
+      ];
 
   @override
   String toString() =>

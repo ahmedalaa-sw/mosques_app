@@ -73,4 +73,4 @@ class LocationPermissionException implements Exception {
 
   @override
   String toString() => 'LocationPermissionException: $message';
-}
+} 

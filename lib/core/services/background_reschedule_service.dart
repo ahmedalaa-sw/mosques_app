@@ -33,8 +33,6 @@ class BackgroundRescheduleService {
   static const _prefsLat = 'last_known_lat';
   static const _prefsLng = 'last_known_lng';
 
-  // Must match NotificationService — this isolate is separate so we cannot
-  // share constants via instance access without re-creating the channels.
   static const _preAlertChannelId = 'prayer_pre_alert_v2';
   static const _preAlertChannelName = 'Prayer Pre-Alert';
   static const _preAlertChannelDesc = 'Notifies 15 minutes before each prayer';
@@ -144,6 +142,9 @@ class BackgroundRescheduleService {
       }
     }
 
+    // ── FIX 3: use calculatePrayerTimes (sync, plural) not calculatePrayerTime ─
+    // BackgroundRescheduleService runs in a background isolate where async
+    // top-level calls are not straightforward. The sync variant is correct here.
     final prayerTimes = AdhanPrayerService.calculatePrayerTimes(
       latitude: latitude,
       longitude: longitude,
@@ -151,18 +152,27 @@ class BackgroundRescheduleService {
 
     final today = DateTime.now();
 
-    DateTime toLocalDateTime(DateTime Function(PrayerTimes) getter) {
-      final d = getter(prayerTimes).toLocal();
-      return DateTime(today.year, today.month, today.day, d.hour, d.minute);
+    // ── FIX 4: adhan_dart returns nullable DateTime? for each prayer ──────────
+    // The original code called getter(prayerTimes).toLocal() without null checks,
+    // which would throw a Null check operator used on null value at runtime.
+    // We guard with a null check and skip the prayer if the value is null.
+    // We also use .add(offset) instead of .toLocal() — see home_model.dart
+    // for the full explanation of why .toLocal() is unreliable here.
+    final offset = today.timeZoneOffset;
+
+    DateTime? toLocalDateTime(DateTime? dt) {
+      if (dt == null) return null;
+      final local = dt.add(offset);
+      return DateTime(today.year, today.month, today.day, local.hour, local.minute);
     }
 
-    final prayers = <String, DateTime>{
-      'Fajr': toLocalDateTime((p) => p.fajr),
-      'Sunrise': toLocalDateTime((p) => p.sunrise),
-      'Dhuhr': toLocalDateTime((p) => p.dhuhr),
-      'Asr': toLocalDateTime((p) => p.asr),
-      'Maghrib': toLocalDateTime((p) => p.maghrib),
-      'Isha': toLocalDateTime((p) => p.isha),
+    final prayers = <String, DateTime?>{
+      'Fajr': toLocalDateTime(prayerTimes.fajr),
+      'Sunrise': toLocalDateTime(prayerTimes.sunrise),
+      'Dhuhr': toLocalDateTime(prayerTimes.dhuhr),
+      'Asr': toLocalDateTime(prayerTimes.asr),
+      'Maghrib': toLocalDateTime(prayerTimes.maghrib),
+      'Isha': toLocalDateTime(prayerTimes.isha),
     };
 
     for (int i = 100; i < 106; i++) {
@@ -179,6 +189,14 @@ class BackgroundRescheduleService {
     for (final entry in prayers.entries) {
       final name = entry.key;
       final time = entry.value;
+
+      // Skip this prayer if the time could not be calculated
+      if (time == null) {
+        dev.log('[BackgroundReschedule] Null time for $name — skipping');
+        id15++;
+        idAt++;
+        continue;
+      }
 
       final notifyAt = time.subtract(const Duration(minutes: 15));
       if (!notifyAt.isBefore(now)) {

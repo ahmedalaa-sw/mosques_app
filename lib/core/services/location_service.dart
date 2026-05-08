@@ -1,18 +1,8 @@
 import 'package:geolocator/geolocator.dart';
 
 /// Shared location service used by MosqueSearchCubit.
-///
 /// Place at: lib/core/services/location_service.dart
-///
-/// This is a separate class from GeolocationService (used by the home feature).
-/// MosqueSearchCubit instantiates LocationService directly as an instance
-/// (not a static class), so we keep it as a normal class with instance methods.
 class LocationService {
-  /// Returns the device's current [Position].
-  ///
-  /// Handles all permission and service-enabled checks internally.
-  /// Throws a plain [Exception] with a clear message on any failure so
-  /// MosqueSearchCubit can catch it and emit MosqueSearchError.
   Future<Position> getCurrentLocation() async {
     // 1. Check if GPS / network location is switched on
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -45,10 +35,19 @@ class LocationService {
       );
     }
 
-    // 5. Permission granted — get the position
+    // 5. Permission granted — get position
+    //
+    // geolocator v14 API:
+    //   • desiredAccuracy and timeLimit were removed as top-level params (deprecated since v9)
+    //   • They moved into LocationSettings, but timeLimit was also removed from
+    //     LocationSettings in v14 — the official docs example only uses accuracy
+    //     and distanceFilter. Using timeLimit causes a TimeoutException on many
+    //     Android devices (known geolocator issue #1611).
+    //   • Drop timeLimit entirely; rely on the OS to resolve the position.
     return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.medium,
-      timeLimit: const Duration(seconds: 15),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+      ),
     );
   }
 }
