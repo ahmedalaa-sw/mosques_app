@@ -1,15 +1,14 @@
 import 'dart:developer' as dev;
 import 'dart:ui' show Color;
 
-import 'package:adhan_dart/adhan_dart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:workmanager/workmanager.dart';
 import 'adhan_prayer_service.dart';
+import 'location_service.dart';
 
 const _uniqueName = 'prayerNotificationReschedule';
 const _uniqueNamePeriodic = 'prayerNotificationDailySync';
@@ -124,22 +123,10 @@ class BackgroundRescheduleService {
       latitude = lat;
       longitude = lng;
     } else {
-      try {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.low,
-            timeLimit: Duration(seconds: 10),
-          ),
-        );
-        latitude = pos.latitude;
-        longitude = pos.longitude;
-        await cacheLastLocation(latitude, longitude);
-      } catch (_) {
-        dev.log(
-          '[BackgroundReschedule] No location available — cannot reschedule',
-        );
-        return false;
-      }
+      latitude = LocationService.defaultLatitude;
+      longitude = LocationService.defaultLongitude;
+      await cacheLastLocation(latitude, longitude);
+      dev.log('[BackgroundReschedule] Using fallback coordinates');
     }
 
     // ── FIX 3: use calculatePrayerTimes (sync, plural) not calculatePrayerTime ─

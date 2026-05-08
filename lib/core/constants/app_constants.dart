@@ -5,6 +5,14 @@ class AppConstants {
   static const cachedMosques = 'cached_mosques';
 
   // Location
-  static const locationThresholdMeters = 1000.0;
-  static const defaultSearchRadiusMeters = 1000;
+  // App-level threshold: re-fetch API only when user moves this far from the
+  // position used in the last successful fetch.
+  static const locationThresholdMeters = 250;
+
+  // OS-level stream filter: geolocator suppresses emissions until the device
+  // has moved this many metres. Keeps the stream lean between 50m emissions
+  // while the 250m threshold guards the actual API call.
+  static const locationStreamDistanceFilterMeters = 50;
+
+  static const defaultSearchRadiusMeters = 250;
 }

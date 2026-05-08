@@ -1,53 +1,104 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Shared location service used by MosqueSearchCubit.
-/// Place at: lib/core/services/location_service.dart
 class LocationService {
+  static const _prefsLat = 'last_known_lat';
+  static const _prefsLng = 'last_known_lng';
+
+  static const defaultLatitude = 29.3759;
+  static const defaultLongitude = 47.9774;
+
   Future<Position> getCurrentLocation() async {
-    // 1. Check if GPS / network location is switched on
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception(
-        'Location services are disabled. '
-        'Please enable GPS on your device and try again.',
+        'Location services are disabled. Please enable GPS on your device and try again.',
       );
     }
 
-    // 2. Check current permission status
     LocationPermission permission = await Geolocator.checkPermission();
-
-    // 3. Request if not yet decided
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        throw Exception(
-          'Location permission was denied. '
-          'Please allow location access to find nearby mosques.',
-        );
+        throw Exception('Location permission was denied.');
       }
     }
 
-    // 4. Permanently denied — must go to system settings
     if (permission == LocationPermission.deniedForever) {
       throw Exception(
-        'Location permission is permanently denied. '
-        'Please enable it in your device settings.',
+        'Location permission is permanently denied. Please enable it in settings.',
       );
     }
 
-    // 5. Permission granted — get position
-    //
-    // geolocator v14 API:
-    //   • desiredAccuracy and timeLimit were removed as top-level params (deprecated since v9)
-    //   • They moved into LocationSettings, but timeLimit was also removed from
-    //     LocationSettings in v14 — the official docs example only uses accuracy
-    //     and distanceFilter. Using timeLimit causes a TimeoutException on many
-    //     Android devices (known geolocator issue #1611).
-    //   • Drop timeLimit entirely; rely on the OS to resolve the position.
-    return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+    );
+    await cacheLastKnownLocation(position.latitude, position.longitude);
+    return position;
+  }
+
+  Future<({double latitude, double longitude})> getBestEffortCoordinates() async {
+    try {
+      final position = await getCurrentLocation();
+      return (latitude: position.latitude, longitude: position.longitude);
+    } catch (_) {
+      final cached = await getCachedLocation();
+      if (cached != null) return cached;
+      return (
+        latitude: defaultLatitude,
+        longitude: defaultLongitude,
+      );
+    }
+  }
+
+  Future<void> cacheLastKnownLocation(double lat, double lng) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_prefsLat, lat);
+    await prefs.setDouble(_prefsLng, lng);
+  }
+
+  Future<({double latitude, double longitude})?> getCachedLocation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lat = prefs.getDouble(_prefsLat);
+    final lng = prefs.getDouble(_prefsLng);
+    if (lat == null || lng == null) return null;
+    return (latitude: lat, longitude: lng);
+  }
+
+  Stream<Position> getPositionStream({int distanceFilter = 50}) {
+    return Geolocator.getPositionStream(
+      locationSettings: LocationSettings(
         accuracy: LocationAccuracy.medium,
+        distanceFilter: distanceFilter,
       ),
     );
+  }
+
+  static Future<bool> hasPermission() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      return permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> requestPermission() async {
+    try {
+      final permission = await Geolocator.requestPermission();
+      return permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> openSettings() async {
+    try {
+      return await Geolocator.openLocationSettings();
+    } catch (_) {
+      return false;
+    }
   }
 }

@@ -1,9 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/constants/app_strings.dart';
-import 'package:mosques_app/core/constants/strings_constants.dart';
 import 'package:mosques_app/core/routing/routes.dart';
 import 'package:mosques_app/core/widgets/mosque_list_card.dart';
 import 'package:mosques_app/features/favorite/models/favorite_model.dart';
@@ -49,7 +48,7 @@ class FavoriteScreen extends StatelessWidget {
                   children: [
                     SizedBox(height: 20.h),
                     Text(
-                      StringsConstants.favorites,
+                      'favorites'.tr(),
                       style: TextStyle(
                         color: AppColor.onSurface,
                         fontSize: 24.sp,
@@ -58,7 +57,7 @@ class FavoriteScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 6.h),
                     Text(
-                      '${state.favorites.length} saved mosques',
+                      '${state.favorites.length}${'saved_mosques_count'.tr()}',
                       style: TextStyle(
                         color: AppColor.onSurfaceVariant,
                         fontSize: 13.sp,
@@ -69,7 +68,7 @@ class FavoriteScreen extends StatelessWidget {
                       Expanded(
                         child: Center(
                           child: Text(
-                            StringsConstants.noFavorites,
+                            'no_saved_mosques'.tr(),
                             style: TextStyle(
                               color: AppColor.onSurfaceVariant,
                               fontSize: 16.sp,
@@ -125,7 +124,7 @@ class FavoriteScreen extends StatelessWidget {
   Color _statusColor(FavoriteModel favorite) {
     if (favorite.isOpen == true) return AppColor.primaryColor1;
     if (favorite.isOpen == false) return AppColor.errorColor;
-    if (favorite.statusLabel == AppStrings.statusNotValid) {
+    if (favorite.statusLabel == 'status_not_valid') {
       return AppColor.secondaryColor;
     }
     return AppColor.onSurfaceVariant;

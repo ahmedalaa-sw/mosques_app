@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'core/services/background_reschedule_service.dart';
 import 'core/network/dio_helper.dart';
 import 'core/routing/app_router.dart';
@@ -13,6 +14,7 @@ import 'app_bloc_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   await Workmanager().initialize(rescheduleCallbackDispatcher);
   await BackgroundRescheduleService.registerTasks();
@@ -24,5 +26,14 @@ void main() async {
   log("Date time now : ${DateTime.now()}");
   log(DateTime.now().timeZoneName);
   log(DateTime.now().timeZoneOffset.toString());
-  runApp(MyApp(appRouter: AppRouter()));
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      child: MyApp(appRouter: AppRouter()),
+    ),
+  );
 }

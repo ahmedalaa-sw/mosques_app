@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
@@ -24,7 +25,7 @@ class LoadingView extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           Text(
-            'Loading prayer times...',
+            'loading_prayer_times'.tr(),
             style: TextStyle(
               color: AppColor.textSecondary,
               fontSize: 16.sp,

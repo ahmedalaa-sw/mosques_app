@@ -1,8 +1,8 @@
 import 'dart:ui';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/strings_constants.dart';
 import '../../models/mosque_detail_model.dart';
 
 class MosqueInfoSection extends StatelessWidget {
@@ -37,7 +37,7 @@ class _StatusAndRatingRow extends StatelessWidget {
       children: [
         // Open / Closed badge
         _GlassBadge(
-          label: mosque.statusLabel,
+          label: mosque.statusLabel.tr(),
           color: _statusColor(),
         ),
         if (mosque.rating > 0) ...[
@@ -64,7 +64,7 @@ class _StatusAndRatingRow extends StatelessWidget {
   Color _statusColor() {
     if (mosque.isOpenNow == true) return AppColor.primaryColor1;
     if (mosque.isOpenNow == false) return AppColor.errorColor;
-    if (mosque.statusLabel == StringsConstants.statusNotValid) {
+    if (mosque.statusLabel == 'status_not_valid') {
       return AppColor.secondaryColor;
     }
     return AppColor.onSurfaceVariant;
@@ -82,14 +82,14 @@ class _StatChipsRow extends StatelessWidget {
         _StatChip(
           icon: Icons.location_on_rounded,
           label:
-              '${mosque.distanceKm.toStringAsFixed(1)} ${StringsConstants.km}',
+              '${mosque.distanceKm.toStringAsFixed(1)} ${'km'.tr()}',
         ),
         SizedBox(width: 10.w),
         if (mosque.capacity != null) ...[
           _StatChip(
             icon: Icons.people_rounded,
             label:
-                '${_formatCapacity(mosque.capacity!)} ${StringsConstants.worshippers}',
+                '${_formatCapacity(mosque.capacity!)} ${'worshippers'.tr()}',
           ),
         ],
       ],

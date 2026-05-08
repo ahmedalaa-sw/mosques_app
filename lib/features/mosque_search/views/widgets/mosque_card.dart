@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/core/widgets/mosque_list_card.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 
@@ -26,7 +25,7 @@ class MosqueCard extends StatelessWidget {
   Color _statusColor() {
     if (mosque.isOpen == true) return AppColor.primaryColor1;
     if (mosque.isOpen == false) return AppColor.errorColor;
-    if (mosque.statusLabel == AppStrings.statusNotValid) {
+    if (mosque.statusLabel == 'status_not_valid') {
       return AppColor.secondaryColor;
     }
     return AppColor.onSurfaceVariant;

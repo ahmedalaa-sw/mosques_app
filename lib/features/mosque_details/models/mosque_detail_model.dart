@@ -1,5 +1,3 @@
-import 'package:mosques_app/core/constants/strings_constants.dart';
-
 class MosqueDetailModel {
   final String id;
   final String name;
@@ -38,7 +36,7 @@ class MosqueDetailModel {
     this.website,
     this.description,
     this.isOpenNow,
-    this.statusLabel = StringsConstants.statusNotFound,
+    this.statusLabel = 'not_found',
     this.isFavorite = false,
     this.amenities = const [],
     this.prayerTimes = const {},
@@ -63,7 +61,7 @@ class MosqueDetailModel {
       description: json['description'] as String?,
       isOpenNow: json['is_open_now'] as bool?,
       statusLabel:
-          json['status_label'] as String? ?? StringsConstants.statusNotFound,
+          json['status_label'] as String? ?? 'not_found',
       isFavorite: json['is_favorite'] as bool? ?? false,
       amenities: List<String>.from(json['amenities'] as List? ?? const []),
       prayerTimes: Map<String, String>.from(json['prayer_times'] as Map? ?? {}),

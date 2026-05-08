@@ -1,4 +1,3 @@
-import 'package:mosques_app/core/constants/app_strings.dart';
 import 'package:mosques_app/core/network/endpoint_constants.dart';
 
 class MosqueModel {
@@ -106,10 +105,10 @@ class MosqueModel {
 
   static String? _displayableAmenity(String type) {
     const map = {
-      'parking': AppStrings.amenityParking,
-      'wheelchair_accessible': AppStrings.amenityAccessible,
-      'prayer_room': AppStrings.amenityPrayerRoom,
-      'wudu': AppStrings.amenityWudu,
+      'parking': 'amenity_parking',
+      'wheelchair_accessible': 'amenity_accessible',
+      'prayer_room': 'amenity_prayer_room',
+      'wudu': 'amenity_wudu',
     };
     return map[type];
   }
@@ -123,12 +122,12 @@ class MosqueModel {
     required bool hasOpenNow,
   }) {
     if (rawOpenStatus is bool) {
-      return rawOpenStatus ? AppStrings.statusOpen : AppStrings.statusClosed;
+      return rawOpenStatus ? 'open' : 'closed';
     }
     if (!hasOpenNow || rawOpenStatus == null) {
-      return AppStrings.statusNotFound;
+      return 'not_found';
     }
-    return AppStrings.statusNotValid;
+    return 'status_not_valid';
   }
 
   static String _cachedStatusLabel({
@@ -138,8 +137,8 @@ class MosqueModel {
     if (cachedStatusLabel != null && cachedStatusLabel.trim().isNotEmpty) {
       return cachedStatusLabel;
     }
-    if (isOpen == true) return AppStrings.statusOpen;
-    if (isOpen == false) return AppStrings.statusClosed;
-    return AppStrings.statusNotFound;
+    if (isOpen == true) return 'open';
+    if (isOpen == false) return 'closed';
+    return 'not_found';
   }
 }
