@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/services/location_service.dart';
 import 'package:mosques_app/core/errors/failures.dart';
+import 'package:mosques_app/core/utils/prayer_wall_clock_format.dart';
 import 'home_model.dart';
 
 class HomeRepository {
@@ -34,6 +35,8 @@ class HomeRepository {
         latitude: latitude,
         longitude: longitude,
       );
+
+      PrayerWallClockFormat.debugLogPrayerSchedule('[HomeRepository]', prayerTimes);
 
       return Right(
         AladhanPrayerTimesModel.fromAdhanPrayerTimes(

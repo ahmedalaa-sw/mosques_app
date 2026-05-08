@@ -3,8 +3,8 @@ class PrayerNotificationConfig {
   final String azanChannelId;
   final String channelName;
   final String channelDescription;
-  final String callSound;   // raw resource name, e.g. 'fajr_call'
-  final String azanSound;   // raw resource name, e.g. 'fajr_azan'
+  final String callSound;  
+  final String azanSound;  
 
   const PrayerNotificationConfig({
     required this.callChannelId,
@@ -31,8 +31,6 @@ const kPreAlertChannelId   = 'prayer_pre_alert_v2';
 const kPreAlertChannelName = 'Prayer Pre-Alert';
 const kPreAlertChannelDesc = 'Notifies 15 minutes before each prayer';
 
-/// Channels from previous architectures that must be deleted on first run
-/// so Android can recreate them with the correct (new) settings.
 const kLegacyChannelIds = <String>[
   'prayer_times_channel',
   'prayer_at_time_v2',
@@ -45,7 +43,6 @@ const kLegacyChannelIds = <String>[
   'prayer_azan_v2',   // old shared azan channel
 ];
 
-// ── Per-prayer configs ────────────────────────────────────────────────────────
 
 const kPrayerConfigs = <String, PrayerNotificationConfig>{
   'Fajr': PrayerNotificationConfig(
@@ -98,7 +95,6 @@ const kPrayerConfigs = <String, PrayerNotificationConfig>{
   ),
 };
 
-/// Fallback used when a prayer name doesn't match (e.g. test notifications).
 const kFallbackPrayerConfig = PrayerNotificationConfig(
   callChannelId: 'prayer_fajr_call_v1',
   azanChannelId: 'prayer_fajr_azan_v1',
@@ -107,16 +103,10 @@ const kFallbackPrayerConfig = PrayerNotificationConfig(
   callSound: 'fajr_call',
   azanSound: 'fajr_azan',
 );
-
-/// Notification IDs.
-/// Pre-alert : 100–105
-/// At-time   : 200–205
-/// (Old azan IDs 300–305 are cancelled once during migration.)
 const kPreAlertBaseId = 100;
 const kAtTimeBaseId   = 200;
 const kMaxPrayers     = 6;
 
-/// Arabic prayer names for notification titles.
 const kArabicNames = <String, String>{
   'Fajr'    : 'الفجر',
   'Sunrise' : 'الشروق',

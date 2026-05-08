@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
+import 'package:mosques_app/core/utils/prayer_wall_clock_format.dart';
 
 class PrayerModel {
   final String name;
@@ -47,40 +48,20 @@ class AladhanPrayerTimesModel {
     required double longitude,
     String? methodName,
   }) {
-    // Pre-compute the device's UTC offset once for all prayers.
-    // adhan_dart returns DateTime values that are UTC but may be flagged
-    // as isUtc=false (plain DateTime with UTC hour/minute values).
-    // Calling .toLocal() on a non-UTC-flagged DateTime is a NO-OP in Dart,
-    // so we manually add the device's timezone offset instead.
-    // This is the only approach that works reliably regardless of how
-    // adhan_dart internally flags its returned DateTimes.
-    final offset = DateTime.now().timeZoneOffset;
-
+    // adhan builds each prayer with DateTime.utc through TimeComponents.utcDate.
+    // These are genuine UTC timelines (isUtc == true); project with toLocal().
     return AladhanPrayerTimesModel(
-      fajr: _fmt(prayerTimes.fajr, offset),
-      sunrise: _fmt(prayerTimes.sunrise, offset),
-      dhuhr: _fmt(prayerTimes.dhuhr, offset),
-      asr: _fmt(prayerTimes.asr, offset),
-      maghrib: _fmt(prayerTimes.maghrib, offset),
-      isha: _fmt(prayerTimes.isha, offset),
+      fajr: PrayerWallClockFormat.hourMinute(prayerTimes.fajr),
+      sunrise: PrayerWallClockFormat.hourMinute(prayerTimes.sunrise),
+      dhuhr: PrayerWallClockFormat.hourMinute(prayerTimes.dhuhr),
+      asr: PrayerWallClockFormat.hourMinute(prayerTimes.asr),
+      maghrib: PrayerWallClockFormat.hourMinute(prayerTimes.maghrib),
+      isha: PrayerWallClockFormat.hourMinute(prayerTimes.isha),
       latitude: latitude,
       longitude: longitude,
       date: DateTime.now(),
       methodName: methodName ?? AdhanPrayerService.defaultMethodName,
     );
-  }
-
-  // ── FIX 2: add timezone offset manually instead of calling .toLocal() ─────
-  // adhan_dart docs: "prayer times will be DateTime instances in UTC values."
-  // However, the returned DateTimes are NOT always flagged as isUtc=true,
-  // which makes Dart's .toLocal() treat them as already-local (NO-OP).
-  // Adding the offset Duration directly gives us the correct local time
-  // regardless of how the library flags the returned DateTime.
-  static String _fmt(DateTime? t, Duration offset) {
-    if (t == null) return '00:00';
-    final local = t.add(offset);
-    return '${local.hour.toString().padLeft(2, '0')}:'
-        '${local.minute.toString().padLeft(2, '0')}';
   }
 
   List<PrayerModel> toHousePrayerModels(String? currentPrayer) => [

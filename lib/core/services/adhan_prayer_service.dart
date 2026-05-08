@@ -1,4 +1,5 @@
 import 'package:adhan_dart/adhan_dart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mosques_app/features/home/model/prayer_method_mapper.dart';
 import '../utils/location_utils.dart';
 
@@ -16,19 +17,18 @@ class AdhanPrayerService {
     final countryCode = await LocationUtils.getCountryCode(latitude, longitude);
     final params = PrayerMethodMapper.fromCountry(countryCode);
     params.madhab = Madhab.shafi;
+    debugPrint(
+      '[AdhanPrayerService] Calculating with country=$countryCode, '
+      'lat=$latitude, lng=$longitude',
+    );
 
     final now = DateTime.now();
 
-    // ── FIX 1: pass a UTC-only date (year/month/day, no time component) ────
-    // adhan_dart's official docs state prayer times are returned as UTC values.
-    // Passing DateTime.now() (local) embeds the local timezone offset into the
-    // date object, causing the library to double-count the offset internally
-    // and produce times that are ~+10 h wrong for Kuwait (UTC+3).
-    // Using DateTime.utc(y, m, d) strips the time component entirely and gives
-    // the library a clean UTC midnight anchor to calculate from.
+    // Gregorian calendar anchor; SolarTime reads only year/month/day (Julian).
+    final calendar = DateTime(now.year, now.month, now.day);
     return PrayerTimes(
       coordinates: coordinates,
-      date: DateTime.utc(now.year, now.month, now.day),
+      date: DateTime.utc(calendar.year, calendar.month, calendar.day),
       calculationParameters: params,
       precision: true,
     );
@@ -44,14 +44,21 @@ class AdhanPrayerService {
     CalculationParameters? params,
   }) {
     final coordinates = Coordinates(latitude, longitude);
-    final calculationParams = params ?? CalculationMethodParameters.muslimWorldLeague();
+    final inferred = LocationUtils.offlineCountryIsoGuessForPrayer(latitude, longitude);
+
+    CalculationParameters calculationParams =
+        params ??
+        (inferred != null
+            ? PrayerMethodMapper.fromCountry(inferred)
+            : CalculationMethodParameters.muslimWorldLeague());
     calculationParams.madhab = Madhab.shafi;
 
     final now = DateTime.now();
+    final calendar = DateTime(now.year, now.month, now.day);
 
     return PrayerTimes(
       coordinates: coordinates,
-      date: DateTime.utc(now.year, now.month, now.day),
+      date: DateTime.utc(calendar.year, calendar.month, calendar.day),
       calculationParameters: calculationParams,
       precision: true,
     );

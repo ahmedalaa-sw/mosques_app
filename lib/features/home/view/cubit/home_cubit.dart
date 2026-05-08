@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
@@ -25,36 +26,15 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
     try {
       emit(const HomeLoading());
 
-      bool hasPermission = await repository.hasLocationPermission();
-      if (!hasPermission) {
-        bool granted = await repository.requestLocationPermission();
-        if (!granted) {
-          emit(
-            const HomePermissionDenied(
-              message:
-                  'Location permission is required to display prayer times. '
-                  'Please enable it in app settings.',
-            ),
-          );
-          return;
-        }
-      }
-
       final result = await repository.getPrayerTimesForCurrentLocation();
       result.fold(
         (failure) {
-          if (failure is ServerFailure && failure.statusCode == 403) {
-            emit(HomePermissionDenied(message: failure.message));
-          } else {
-            emit(
-              HomeError(
-                message: failure.message,
-                statusCode: failure is ServerFailure
-                    ? failure.statusCode
-                    : null,
-              ),
-            );
-          }
+          emit(
+            HomeError(
+              message: failure.message,
+              statusCode: failure is ServerFailure ? failure.statusCode : null,
+            ),
+          );
         },
         (prayerTimes) => _onLoaded(prayerTimes),
       );
@@ -102,6 +82,17 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   // ── Prayer transition timer ───────────────────────────────────────────────
 
   void _onLoaded(AladhanPrayerTimesModel prayerTimes) {
+    if (kDebugMode) {
+      debugPrint(
+        '[HomeCubit] Loaded coordinates ${prayerTimes.latitude}, '
+        '${prayerTimes.longitude} tzOffset=${DateTime.now().timeZoneOffset}',
+      );
+      debugPrint(
+        '[HomeCubit] Display strings → Fajr=${prayerTimes.fajr} '
+        'Sunrise=${prayerTimes.sunrise} Dhuhr=${prayerTimes.dhuhr} '
+        'Asr=${prayerTimes.asr} Maghrib=${prayerTimes.maghrib} Isha=${prayerTimes.isha}',
+      );
+    }
     _loadedPrayerTimes = prayerTimes;
     final currentPrayer = _getCurrentPrayerName(prayerTimes);
     final prayers = prayerTimes.toHousePrayerModels(currentPrayer);

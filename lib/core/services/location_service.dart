@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocationService {
   static const _prefsLat = 'last_known_lat';
   static const _prefsLng = 'last_known_lng';
+  static const _getPositionTimeout = Duration(seconds: 8);
 
   static const defaultLatitude = 29.3759;
   static const defaultLongitude = 47.9774;
@@ -31,8 +32,10 @@ class LocationService {
     }
 
     final position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
-    );
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+      ),
+    ).timeout(_getPositionTimeout);
     await cacheLastKnownLocation(position.latitude, position.longitude);
     return position;
   }
@@ -44,6 +47,8 @@ class LocationService {
     } catch (_) {
       final cached = await getCachedLocation();
       if (cached != null) return cached;
+      // If we have no cached coordinates, still return something deterministic
+      // so adhan_dart can calculate fully offline.
       return (
         latitude: defaultLatitude,
         longitude: defaultLongitude,

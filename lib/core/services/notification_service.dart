@@ -149,6 +149,13 @@ class NotificationService {
       final name = entry.key;
       final time = entry.value;
 
+      if (kDebugMode) {
+        debugPrint(
+          '[NotificationService] $name naiveInput=$time → '
+          'tzLocal=${tz.TZDateTime.from(time, tz.local)}',
+        );
+      }
+
       final preTime = time.subtract(const Duration(minutes: 15));
       if (preTime.isAfter(now)) {
         await _plugin.zonedSchedule(

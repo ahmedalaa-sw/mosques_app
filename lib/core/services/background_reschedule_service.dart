@@ -129,9 +129,6 @@ class BackgroundRescheduleService {
       dev.log('[BackgroundReschedule] Using fallback coordinates');
     }
 
-    // ── FIX 3: use calculatePrayerTimes (sync, plural) not calculatePrayerTime ─
-    // BackgroundRescheduleService runs in a background isolate where async
-    // top-level calls are not straightforward. The sync variant is correct here.
     final prayerTimes = AdhanPrayerService.calculatePrayerTimes(
       latitude: latitude,
       longitude: longitude,
@@ -139,28 +136,22 @@ class BackgroundRescheduleService {
 
     final today = DateTime.now();
 
-    // ── FIX 4: adhan_dart returns nullable DateTime? for each prayer ──────────
-    // The original code called getter(prayerTimes).toLocal() without null checks,
-    // which would throw a Null check operator used on null value at runtime.
-    // We guard with a null check and skip the prayer if the value is null.
-    // We also use .add(offset) instead of .toLocal() — see home_model.dart
-    // for the full explanation of why .toLocal() is unreliable here.
-    final offset = today.timeZoneOffset;
-
-    DateTime? toLocalDateTime(DateTime? dt) {
+    DateTime? naiveTodayFromPrayerUtc(DateTime? dt) {
       if (dt == null) return null;
-      final local = dt.add(offset);
-      return DateTime(today.year, today.month, today.day, local.hour, local.minute);
+      final wall = dt.toLocal();
+      return DateTime(today.year, today.month, today.day, wall.hour, wall.minute);
     }
 
     final prayers = <String, DateTime?>{
-      'Fajr': toLocalDateTime(prayerTimes.fajr),
-      'Sunrise': toLocalDateTime(prayerTimes.sunrise),
-      'Dhuhr': toLocalDateTime(prayerTimes.dhuhr),
-      'Asr': toLocalDateTime(prayerTimes.asr),
-      'Maghrib': toLocalDateTime(prayerTimes.maghrib),
-      'Isha': toLocalDateTime(prayerTimes.isha),
+      'Fajr': naiveTodayFromPrayerUtc(prayerTimes.fajr),
+      'Sunrise': naiveTodayFromPrayerUtc(prayerTimes.sunrise),
+      'Dhuhr': naiveTodayFromPrayerUtc(prayerTimes.dhuhr),
+      'Asr': naiveTodayFromPrayerUtc(prayerTimes.asr),
+      'Maghrib': naiveTodayFromPrayerUtc(prayerTimes.maghrib),
+      'Isha': naiveTodayFromPrayerUtc(prayerTimes.isha),
     };
+
+    dev.log('[BackgroundReschedule] schedule map (today-local naive): $prayers');
 
     for (int i = 100; i < 106; i++) {
       await plugin.cancel(i);

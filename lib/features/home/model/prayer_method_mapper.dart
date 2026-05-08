@@ -26,6 +26,11 @@ class PrayerMethodMapper {
       case 'TR':
         return CalculationMethodParameters.turkiye();
 
+      case 'US':
+      case 'CA':
+        // ISNA-style convention for North America (adhan_dart: northAmerica).
+        return CalculationMethodParameters.northAmerica();
+
       default:
         return CalculationMethodParameters.muslimWorldLeague();
     }

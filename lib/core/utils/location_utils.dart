@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationUtils {
@@ -7,25 +6,47 @@ class LocationUtils {
   static const _latKey = 'cached_lat';
   static const _lngKey = 'cached_lng';
 
-  /// 🧠 محاولة تحديد الدولة بدون نت (تقريبية)
-  static String? _detectOffline(double lat, double lng) {
+  /// Regions used for calculation-method inference (offline, approximate).
+  static String? _approximateOfflineRegion(double lat, double lng) {
     /// 🇪🇬 Egypt
     if (lat >= 22 && lat <= 32 && lng >= 25 && lng <= 36) {
       return 'EG';
     }
 
-    /// 🇸🇦 Saudi
-    if (lat >= 16 && lat <= 32 && lng >= 34 && lng <= 56) {
-      return 'SA';
-    }
-
-    /// 🇰🇼 Kuwait
+    /// 🇰🇼 Kuwait (must be BEFORE the broad Saudi/Gulf box)
     if (lat >= 28 && lat <= 31 && lng >= 46 && lng <= 49) {
       return 'KW';
     }
 
-    return null; // fallback
+    /// 🇸🇦 Saudi Arabia & parts of the Arabian Peninsula
+    if (lat >= 16 && lat <= 32 && lng >= 34 && lng <= 56) {
+      return 'SA';
+    }
+
+    /// 🇺🇸 Contiguous USA (Mountain View falls here).
+    /// Excludes overlapping northern Canada by longitude/latitude heuristics.
+    if (lat >= 24.0 &&
+        lat <= 50.0 &&
+        lng >= -125.0 &&
+        lng <= -66.0) {
+      return 'US';
+    }
+
+    /// 🇨🇦 Canada (mainland, coarse).
+    if (lat >= 41.0 &&
+        lat <= 70.0 &&
+        lng >= -141.0 &&
+        lng <= -52.0) {
+      return 'CA';
+    }
+
+    return null;
   }
+
+  /// Sync guess for isolates / non-await code paths (no SharedPreferences).
+  /// Returns `null` when unknown — caller should fall back to a global default.
+  static String? offlineCountryIsoGuessForPrayer(double lat, double lng) =>
+      _approximateOfflineRegion(lat, lng);
 
   /// 📍 هل المستخدم اتحرك مسافة كبيرة؟
   static bool _hasMoved(
@@ -53,9 +74,8 @@ class LocationUtils {
 
   static double _deg2rad(double deg) => deg * (pi / 180);
 
-  /// 🌍 Main function
-  static Future<String> getCountryCode(
-      double lat, double lng) async {
+  /// Offline-only country/code resolver.
+  static Future<String> getCountryCode(double lat, double lng) async {
     final prefs = await SharedPreferences.getInstance();
 
     final cachedCountry = prefs.getString(_countryKey);
@@ -75,7 +95,7 @@ class LocationUtils {
     if (newCached != null) return newCached;
 
     /// ⚡ حاول offline detection
-    final offline = _detectOffline(lat, lng);
+    final offline = _approximateOfflineRegion(lat, lng);
     if (offline != null) {
       await prefs.setString(_countryKey, offline);
       await prefs.setDouble(_latKey, lat);
@@ -83,14 +103,10 @@ class LocationUtils {
       return offline;
     }
 
-    /// 🌐 fallback → geocoding (مرة واحدة)
-    final placemarks = await placemarkFromCoordinates(lat, lng);
-    final code = placemarks.first.isoCountryCode ?? 'US';
-
-    await prefs.setString(_countryKey, code);
+    // Fully offline fallback.
+    await prefs.setString(_countryKey, 'US');
     await prefs.setDouble(_latKey, lat);
     await prefs.setDouble(_lngKey, lng);
-
-    return code;
+    return 'US';
   }
 }
