@@ -1,4 +1,5 @@
 class Routes {
+  static const String onboarding    = '/onboarding';
   static const String homeScreen = '/homeScreen';
   static const String searchScreen = '/searchScreen';
   static const String favScreen = '/favScreen';
@@ -8,5 +9,6 @@ class Routes {
   static const String localization = '/localizationScreen';
   static const String themeMode = '/themeModeScreen';
   static const String contactUs = '/contactUsScreen';
-  static const String mosqueDetails = '/mosqueDetailsScreen';
+  static const String mosqueDetails    = '/mosqueDetailsScreen';
+  static const String changeLocation   = '/changeLocationScreen';
 }

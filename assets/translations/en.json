@@ -56,6 +56,8 @@
   "nearby_sanctuaries": "Nearby Sanctuaries",
   "finding_location": "Finding your location...",
   "found_count": "{} found",
+  "no_mosques_nearby": "No mosques found nearby.\nTap below to check your current location.",
+  "check_my_location": "Check My Location",
 
   "mosque_details": "Mosque Details",
   "directions": "Directions",
@@ -89,6 +91,9 @@
   "error": "Something went wrong",
   "retry": "Retry",
   "no_data": "No data available",
+  "search_timeout": "Request timed out. Please check your connection and try again.",
+  "search_no_internet": "No internet connection. Please check your network.",
+  "search_server_error": "Server error. Please try again later.",
 
   "location_services_disabled": "Location services are disabled. Please enable GPS.",
   "location_permission_denied": "Location permission was denied.",
@@ -111,5 +116,20 @@
   "notification_test_body": "If you see this on your home screen, notifications are working.",
 
   "lat_label": "Lat: ",
-  "lng_label": "Lng: "
+  "lng_label": "Lng: ",
+
+  "onboarding_subtitle": "Select your city to get accurate prayer times instantly",
+  "select_country": "Select Country",
+  "select_city": "Select City",
+  "search_country": "Search country...",
+  "search_city": "Search city...",
+  "get_started": "Get Started",
+  "use_gps_instead": "Use GPS instead",
+  "onboarding_gps_note": "Your location will refine automatically via GPS",
+
+  "prayer_location": "Prayer Location",
+  "prayer_location_auto": "Auto (GPS)",
+  "change_location": "Change Location",
+  "change_location_subtitle": "Select your city to update prayer times",
+  "save_location": "Save Location"
 }

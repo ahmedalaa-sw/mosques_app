@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mosques_app/core/routing/routes.dart';
 import 'package:mosques_app/features/bottom_nav/views/bottom_nav_screen.dart';
 import 'package:mosques_app/features/home/view/home_screen.dart';
+import 'package:mosques_app/features/onboarding/views/onboarding_screen.dart';
 import 'package:mosques_app/features/more/views/about_us_screen.dart';
+import 'package:mosques_app/features/more/views/change_location_screen.dart';
 import 'package:mosques_app/features/more/views/contact_us_screen.dart';
 import 'package:mosques_app/features/more/views/localization_screen.dart';
 import 'package:mosques_app/features/more/views/theme_screen.dart';
@@ -14,6 +16,8 @@ import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 class AppRouter {
   Route generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case Routes.onboarding:
+        return _createRoute(const OnboardingScreen());
       case Routes.homeScreen:
         return _createRoute(const HomeScreen());
       case Routes.searchScreen:
@@ -30,6 +34,8 @@ class AppRouter {
         return _createRoute(const ThemeScreen());
       case Routes.contactUs:
         return _createRoute(const ContactUsScreen());
+      case Routes.changeLocation:
+        return _createRoute(const ChangeLocationScreen());
       case Routes.mosqueDetails:
         final args = settings.arguments;
         final preview = args is MosqueModel ? args : null;

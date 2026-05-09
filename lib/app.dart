@@ -12,7 +12,12 @@ import 'features/more/viewmodels/theme_state.dart';
 
 class MyApp extends StatelessWidget {
   final AppRouter appRouter;
-  const MyApp({super.key, required this.appRouter});
+  final String initialRoute;
+  const MyApp({
+    super.key,
+    required this.appRouter,
+    this.initialRoute = Routes.bottomNavScreen,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +38,7 @@ class MyApp extends StatelessWidget {
                 key: Key(context.locale.languageCode),
                 debugShowCheckedModeBanner: false,
                 onGenerateRoute: appRouter.generateRoute,
-                initialRoute: Routes.bottomNavScreen,
+                initialRoute: initialRoute,
                 theme: AppTheme.lightTheme,
                 darkTheme: AppTheme.darkTheme,
                 themeMode: themeState.themeMode,
