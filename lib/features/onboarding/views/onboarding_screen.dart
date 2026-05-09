@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,6 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/data/cities_data.dart';
 import 'package:mosques_app/core/routing/routes.dart';
+import 'package:mosques_app/core/services/location_service.dart';
+import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/features/onboarding/viewmodels/onboarding_cubit.dart';
 import 'package:mosques_app/features/onboarding/viewmodels/onboarding_state.dart';
 
@@ -26,9 +30,13 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<OnboardingCubit, OnboardingState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is OnboardingDone) {
-          Navigator.of(context).pushReplacementNamed(Routes.bottomNavScreen);
+          await LocationService.requestPermission();
+          await NotificationService.instance.init();
+          if (context.mounted) {
+            Navigator.of(context).pushReplacementNamed(Routes.bottomNavScreen);
+          }
         }
       },
       builder: (context, state) {
@@ -44,6 +52,7 @@ class _Body extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppColor.surfaceDim,
+          resizeToAvoidBottomInset: false,
           body: SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -180,14 +189,7 @@ class _Body extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: isSaving
-                        ? SizedBox(
-                            height: 20.h,
-                            width: 20.h,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColor.onPrimary,
-                            ),
-                          )
+                        ? const _AnimatedSavingText()
                         : Text(
                             'get_started'.tr(),
                             style: TextStyle(
@@ -317,6 +319,48 @@ class _SelectorTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _AnimatedSavingText — cycles through dot counts to show save progress
+// ─────────────────────────────────────────────────────────────────────────────
+class _AnimatedSavingText extends StatefulWidget {
+  const _AnimatedSavingText();
+
+  @override
+  State<_AnimatedSavingText> createState() => _AnimatedSavingTextState();
+}
+
+class _AnimatedSavingTextState extends State<_AnimatedSavingText> {
+  int _dots = 1;
+  late final Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 400), (_) {
+      if (mounted) setState(() => _dots = (_dots % 3) + 1);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '${'saving'.tr()}${'.' * _dots}',
+      style: TextStyle(
+        fontFamily: 'IBMPlexSansArabic',
+        fontSize: 16.sp,
+        fontWeight: FontWeight.w700,
+        color: AppColor.onPrimary,
       ),
     );
   }

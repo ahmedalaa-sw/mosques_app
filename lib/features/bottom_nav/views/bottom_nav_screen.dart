@@ -7,6 +7,8 @@ import 'package:mosques_app/features/bottom_nav/views/widgets/glass_nav_bar.dart
 import 'package:mosques_app/features/bottom_nav/views/widgets/test_notification_fab.dart';
 import 'package:mosques_app/features/favorite/viewmodels/favorite_cubit.dart';
 import 'package:mosques_app/features/favorite/views/favorite_screen.dart';
+import 'package:mosques_app/features/home/model/home_repo.dart';
+import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
 import 'package:mosques_app/features/home/view/home_screen.dart';
 import 'package:mosques_app/features/more/views/more_screen.dart';
 import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_cubit.dart';
@@ -26,6 +28,7 @@ class BottomNavScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => HomeCubit(repository: HomeRepository())..loadPrayerTimes()),
         BlocProvider(create: (_) => BottomNavCubit()),
         BlocProvider(create: (_) => MosqueSearchCubit()),
         BlocProvider(create: (_) => FavoriteCubit()..loadFavorites()),
@@ -42,9 +45,7 @@ class BottomNavScreen extends StatelessWidget {
             return Scaffold(
               backgroundColor: AppColor.surfaceDim,
               extendBody: true,
-              floatingActionButton: cubit.currentIndex == 0
-                  ? const TestNotificationFab()
-                  : null,
+              
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.endFloat,
               body:
