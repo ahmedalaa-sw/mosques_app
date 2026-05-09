@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
-import 'package:mosques_app/features/home/model/home_repo.dart';
-import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
 import 'package:mosques_app/features/home/view/widgets/home_prayer_view.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -12,14 +9,10 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => HomeCubit(repository: HomeRepository())..loadPrayerTimes(),
-
-      child: Scaffold(
-        backgroundColor: AppColor.primaryColor,
-        appBar: const _HomeAppBar(),
-        body: const HomePrayerView(),
-      ),
+    return Scaffold(
+      backgroundColor: AppColor.primaryColor,
+      appBar: const _HomeAppBar(),
+      body: const HomePrayerView(),
     );
   }
 }

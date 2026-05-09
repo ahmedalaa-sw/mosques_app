@@ -4,8 +4,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/errors/failures.dart';
+import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
+import 'package:mosques_app/core/utils/location_utils.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,49 +25,105 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
   Future<void> loadPrayerTimes() async {
     try {
-      emit(const HomeLoading());
+      final hadCache = await _tryInstantLoadFromCache();
+      if (!hadCache) emit(const HomeLoading());
 
       bool hasPermission = await repository.hasLocationPermission();
       if (!hasPermission) {
         bool granted = await repository.requestLocationPermission();
         if (!granted) {
-          emit(
-            const HomePermissionDenied(
-              message:
-                  'Location permission is required to display prayer times. '
-                  'Please enable it in app settings.',
-            ),
-          );
+          if (!hadCache) {
+            emit(
+              const HomePermissionDenied(
+                message:
+                    'Location permission is required to display prayer times. '
+                    'Please enable it in app settings.',
+              ),
+            );
+          }
           return;
         }
       }
 
-      final result = await repository.getPrayerTimesForCurrentLocation();
-      result.fold(
-        (failure) {
-          if (failure is ServerFailure && failure.statusCode == 403) {
-            emit(HomePermissionDenied(message: failure.message));
-          } else {
-            emit(
-              HomeError(
-                message: failure.message,
-                statusCode: failure is ServerFailure
-                    ? failure.statusCode
-                    : null,
-              ),
-            );
-          }
-        },
-        (prayerTimes) => _onLoaded(prayerTimes),
-      );
+      // Auto-retry GPS fetch up to 3 times before surfacing an error.
+      Failure? lastFailure;
+      for (int attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await Future.delayed(const Duration(seconds: 2));
+
+        final result = await repository.getPrayerTimesForCurrentLocation();
+        bool succeeded = false;
+        result.fold(
+          (failure) => lastFailure = failure,
+          (prayerTimes) { _onLoaded(prayerTimes); succeeded = true; },
+        );
+        if (succeeded) return;
+      }
+
+      // All attempts failed — only surface error if no cached state is showing.
+      if (!hadCache) {
+        if (lastFailure is ServerFailure && lastFailure!.statusCode == 403) {
+          emit(HomePermissionDenied(message: lastFailure!.message));
+        } else {
+          emit(HomeError(
+            message: lastFailure?.message ?? '',
+            statusCode: lastFailure is ServerFailure
+                ? (lastFailure as ServerFailure).statusCode
+                : null,
+          ));
+        }
+      }
     } catch (e) {
-      emit(
-        HomeError(
+      debugPrint('[Home] CATCH — $e');
+      if (state is! HomeLoaded) {
+        emit(HomeError(
           message: e.toString().replaceFirst('Exception: ', ''),
           statusCode: null,
+        ));
+      }
+    }
+  }
+
+  /// Instantly shows prayer times from cached location without any GPS call.
+  /// Returns true if cached coordinates existed and data was emitted.
+  Future<bool> _tryInstantLoadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble(BackgroundRescheduleService.prefsLat);
+      final lng = prefs.getDouble(BackgroundRescheduleService.prefsLng);
+      if (lat == null || lng == null) return false;
+
+      final countryCode =
+          prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+      final prayerTimes = AdhanPrayerService.calculatePrayerTimesSync(
+        latitude: lat,
+        longitude: lng,
+        countryCode: countryCode,
+      );
+      _onCacheLoaded(
+        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
+          prayerTimes: prayerTimes,
+          latitude: lat,
+          longitude: lng,
         ),
       );
+      return true;
+    } catch (_) {
+      return false;
     }
+  }
+
+  /// Lightweight display-only load from cache: emits state and schedules the
+  /// prayer timer, but skips notification scheduling and location caching
+  /// (those run once fresh GPS data arrives in [_onLoaded]).
+  void _onCacheLoaded(AladhanPrayerTimesModel prayerTimes) {
+    _loadedPrayerTimes = prayerTimes;
+    final currentPrayer = _getCurrentPrayerName(prayerTimes);
+    emit(HomeLoaded(
+      prayerTimes: prayerTimes,
+      prayers: prayerTimes.toHousePrayerModels(currentPrayer),
+      currentPrayerName: currentPrayer,
+    ));
+    _scheduleNextPrayerTransition(prayerTimes);
   }
 
   Future<void> refreshPrayerTimes() => loadPrayerTimes();
@@ -220,7 +278,8 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
           if (currentMinutes >= startMin) return name;
         }
       }
-      return null;
+      // midnight → fajr: still within Isha's time period
+      return prayers.last.$1;
     } catch (_) {
       return null;
     }
@@ -243,29 +302,44 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   }
 
   void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) async {
-    final today = DateTime.now();
-
-    DateTime toDateTime(String hhmm) {
-      final parts = hhmm.split(':');
-      final h = int.tryParse(parts[0]) ?? 0;
-      final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
-      return DateTime(today.year, today.month, today.day, h, m);
-    }
-
-    final prayers = <String, DateTime>{
-      'Fajr'   : toDateTime(prayerTimes.fajr),
-      'Sunrise': toDateTime(prayerTimes.sunrise),
-      'Dhuhr'  : toDateTime(prayerTimes.dhuhr),
-      'Asr'    : toDateTime(prayerTimes.asr),
-      'Maghrib': toDateTime(prayerTimes.maghrib),
-      'Isha'   : toDateTime(prayerTimes.isha),
-    };
-
     final prefs = await SharedPreferences.getInstance();
     final azanEnabled = prefs.getBool('azan_enabled') ?? false;
+    final countryCode = prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+
+    Map<String, DateTime> buildDayMap(DateTime day, AladhanPrayerTimesModel times) {
+      DateTime toDateTime(String hhmm) {
+        final parts = hhmm.split(':');
+        final h = int.tryParse(parts[0]) ?? 0;
+        final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+        return DateTime(day.year, day.month, day.day, h, m);
+      }
+      return {
+        'Fajr'   : toDateTime(times.fajr),
+        'Sunrise': toDateTime(times.sunrise),
+        'Dhuhr'  : toDateTime(times.dhuhr),
+        'Asr'    : toDateTime(times.asr),
+        'Maghrib': toDateTime(times.maghrib),
+        'Isha'   : toDateTime(times.isha),
+      };
+    }
+
+    final tomorrowRaw = AdhanPrayerService.calculatePrayerTimesSync(
+      latitude: prayerTimes.latitude,
+      longitude: prayerTimes.longitude,
+      countryCode: countryCode,
+      date: tomorrow,
+    );
+    final tomorrowModel = AladhanPrayerTimesModel.fromAdhanPrayerTimes(
+      prayerTimes: tomorrowRaw,
+      latitude: prayerTimes.latitude,
+      longitude: prayerTimes.longitude,
+    );
 
     await NotificationService.instance.schedulePrayerNotifications(
-      prayers,
+      [buildDayMap(today, prayerTimes), buildDayMap(tomorrow, tomorrowModel)],
       azanEnabled: azanEnabled,
     );
   }
