@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:arabic_search/arabic_search.dart';
+import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mosques_app/core/constants/app_constants.dart';
 import 'package:mosques_app/core/services/location_service.dart';
+import 'package:mosques_app/core/services/shared_location_service.dart';
 import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 import 'package:mosques_app/features/mosque_search/repo/mosque_search_repo.dart';
@@ -53,13 +56,20 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     _positionSubscription = null;
   }
 
-  Future<void> loadMosques() async {
+  /// Loads nearby mosques.
+  ///
+  /// [position] — when called from a stream update the position is already
+  /// known and passed directly, avoiding a redundant GPS round-trip.
+  /// When called for the initial load [position] is null and the shared
+  /// location service fetches it (deduplicating any concurrent requests).
+  Future<void> loadMosques({Position? position}) async {
     try {
       emit(MosqueSearchLocating());
-      final position = await _locationService.getCurrentLocation();
-      _lastFetchPosition = position;
+      final pos =
+          position ?? await SharedLocationService.instance.getCurrentLocation();
+      _lastFetchPosition = pos;
 
-      final cached = await _tryLoadFromCache(position);
+      final cached = await _tryLoadFromCache(pos);
       if (cached != null) {
         _all = cached;
         emit(MosqueSearchSuccess(_all));
@@ -68,16 +78,47 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
 
       emit(MosqueSearchLoading());
       final mosques = await _repo.fetchNearbyMosques(
-        lat: position.latitude,
-        lng: position.longitude,
+        lat: pos.latitude,
+        lng: pos.longitude,
       );
 
-      await _saveToCache(position, mosques);
+      await _saveToCache(pos, mosques);
       _all = mosques;
       emit(MosqueSearchSuccess(_all));
     } catch (e) {
-      emit(MosqueSearchError(e.toString()));
+      final (message, canRetry, errorType) = _parseError(e);
+      emit(MosqueSearchError(message, canRetry: canRetry, errorType: errorType));
     }
+  }
+
+  (String, bool, MosqueErrorType) _parseError(Object error) {
+    if (error is DioException) {
+      return switch (error.type) {
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.receiveTimeout =>
+          ('search_timeout'.tr(), true, MosqueErrorType.network),
+        DioExceptionType.connectionError =>
+          ('search_no_internet'.tr(), true, MosqueErrorType.network),
+        DioExceptionType.badResponse =>
+          ('search_server_error'.tr(), false, MosqueErrorType.server),
+        _ => ('search_timeout'.tr(), true, MosqueErrorType.network),
+      };
+    }
+    if (error is LocationServiceDisabledException) {
+      return ('location_services_disabled'.tr(), true, MosqueErrorType.location);
+    }
+    if (error is PermissionDeniedException) {
+      final permanently = error.message?.contains('permanently') ?? false;
+      return (
+        permanently
+            ? 'location_permission_permanently_denied'.tr()
+            : 'location_permission_denied'.tr(),
+        !permanently,
+        MosqueErrorType.location,
+      );
+    }
+    return ('search_server_error'.tr(), true, MosqueErrorType.network);
   }
 
   void _onPositionUpdate(Position position) {
@@ -85,7 +126,7 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     if (state is MosqueSearchLocating || state is MosqueSearchLoading) return;
 
     if (_lastFetchPosition == null) {
-      loadMosques();
+      loadMosques(position: position);
       return;
     }
 
@@ -104,7 +145,8 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
 
     if (distance >= _kLocationThresholdMeters) {
       debugPrint('[MosqueSearchCubit] Threshold exceeded — re-fetching mosques');
-      loadMosques();
+      // Pass the already-known stream position — no extra GPS call needed.
+      loadMosques(position: position);
     }
   }
 

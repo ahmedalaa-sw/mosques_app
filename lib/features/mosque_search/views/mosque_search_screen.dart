@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,6 +9,7 @@ import 'package:mosques_app/features/mosque_search/viewmodels/mosque_search_stat
 import 'widgets/mosque_list.dart';
 import 'widgets/mosque_screen_header.dart';
 import 'widgets/mosque_search_bar.dart';
+import 'widgets/mosque_skeleton_list.dart';
 import 'widgets/mosque_status_message.dart';
 
 class MosqueSearchScreen extends StatelessWidget {
@@ -46,30 +46,31 @@ class MosqueSearchScreen extends StatelessWidget {
             Expanded(
               child: BlocBuilder<MosqueSearchCubit, MosqueSearchState>(
                 builder: (context, state) {
-                  if (state is MosqueSearchLocating) {
-                    return MosqueStatusMessage(
-                      icon: Icons.my_location_rounded,
-                      label: 'finding_location'.tr(),
-                    );
-                  }
-                  if (state is MosqueSearchLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColor.primaryColor,
-                      ),
-                    );
+                  if (state is MosqueSearchLocating ||
+                      state is MosqueSearchLoading) {
+                    return const MosqueSkeletonList();
                   }
                   if (state is MosqueSearchSuccess) {
                     return MosqueList(
                       mosques: state.mosques,
                       onMosqueTap: (mosque) =>
                           _openMosqueDetails(context, mosque),
+                      onRefresh: () =>
+                          context.read<MosqueSearchCubit>().loadMosques(),
                     );
                   }
                   if (state is MosqueSearchError) {
+                    final icon = switch (state.errorType) {
+                      MosqueErrorType.network  => Icons.wifi_off_rounded,
+                      MosqueErrorType.server   => Icons.cloud_off_rounded,
+                      MosqueErrorType.location => Icons.location_off_rounded,
+                    };
                     return MosqueStatusMessage(
-                      icon: Icons.location_off_rounded,
+                      icon: icon,
                       label: state.message,
+                      onRetry: state.canRetry
+                          ? () => context.read<MosqueSearchCubit>().loadMosques()
+                          : null,
                     );
                   }
                   return const SizedBox.shrink();

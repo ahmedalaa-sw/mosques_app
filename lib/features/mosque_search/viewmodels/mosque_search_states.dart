@@ -1,5 +1,7 @@
 import 'package:mosques_app/features/mosque_search/models/mosque_model.dart';
 
+enum MosqueErrorType { network, location, server }
+
 abstract class MosqueSearchState {}
 
 class MosqueSearchInitial extends MosqueSearchState {}
@@ -15,5 +17,11 @@ class MosqueSearchSuccess extends MosqueSearchState {
 
 class MosqueSearchError extends MosqueSearchState {
   final String message;
-  MosqueSearchError(this.message);
+  final bool canRetry;
+  final MosqueErrorType errorType;
+  MosqueSearchError(
+    this.message, {
+    this.canRetry = true,
+    this.errorType = MosqueErrorType.network,
+  });
 }
