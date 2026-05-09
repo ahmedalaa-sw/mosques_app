@@ -122,7 +122,6 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   }
 
   void _onPositionUpdate(Position position) {
-    // Guard: don't interrupt an ongoing locate / fetch.
     if (state is MosqueSearchLocating || state is MosqueSearchLoading) return;
 
     if (_lastFetchPosition == null) {
@@ -137,27 +136,26 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       position.longitude,
     );
 
-    debugPrint(
-      '[MosqueSearchCubit] Position update — '
-      'moved ${distance.toStringAsFixed(1)} m from last fetch '
-      '(threshold: $_kLocationThresholdMeters m)',
-    );
+    if (kDebugMode) {
+      debugPrint(
+        '[MosqueSearchCubit] Position update — '
+        'moved ${distance.toStringAsFixed(1)} m from last fetch '
+        '(threshold: $_kLocationThresholdMeters m)',
+      );
+    }
 
     if (distance >= _kLocationThresholdMeters) {
-      debugPrint('[MosqueSearchCubit] Threshold exceeded — re-fetching mosques');
-      // Pass the already-known stream position — no extra GPS call needed.
+      if (kDebugMode) debugPrint('[MosqueSearchCubit] Threshold exceeded — re-fetching mosques');
       loadMosques(position: position);
     }
   }
 
   void _onStreamError(Object error) {
-    debugPrint('[MosqueSearchCubit] Position stream error: $error');
+    if (kDebugMode) debugPrint('[MosqueSearchCubit] Position stream error: $error');
   }
 
   Future<List<MosqueModel>?> _tryLoadFromCache(Position pos) async {
-    debugPrint(
-      '🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}',
-    );
+    if (kDebugMode) debugPrint('🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}');
 
     final [cachedLat, cachedLng] = await Future.wait([
       AppPreferences.getDouble(_kCachedLat),
@@ -165,11 +163,11 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     ]);
 
     if (cachedLat == null || cachedLng == null) {
-      debugPrint('🔍 [Cache] No cached location found → will call API');
+      if (kDebugMode) debugPrint('🔍 [Cache] No cached location found → will call API');
       return null;
     }
 
-    debugPrint('🔍 [Cache] Cached GPS → lat:$cachedLat, lng:$cachedLng');
+    if (kDebugMode) debugPrint('🔍 [Cache] Cached GPS → lat:$cachedLat, lng:$cachedLng');
 
     final distance = Geolocator.distanceBetween(
       pos.latitude,
@@ -178,26 +176,26 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       cachedLng,
     );
 
-    debugPrint(
-      '🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  '
-      '(threshold: ${_kLocationThresholdMeters.toInt()} m)',
-    );
+    if (kDebugMode) {
+      debugPrint(
+        '🔍 [Cache] Distance from cache: ${distance.toStringAsFixed(1)} m  '
+        '(threshold: ${_kLocationThresholdMeters.toInt()} m)',
+      );
+    }
 
     if (distance >= _kLocationThresholdMeters) {
-      debugPrint('❌ [Cache] MISS — moved too far, calling API');
+      if (kDebugMode) debugPrint('❌ [Cache] MISS — moved too far, calling API');
       return null;
     }
 
     final json = await AppPreferences.getString(_kCachedMosques);
     if (json == null) {
-      debugPrint('❌ [Cache] MISS — no cached results, calling API');
+      if (kDebugMode) debugPrint('❌ [Cache] MISS — no cached results, calling API');
       return null;
     }
 
     final list = jsonDecode(json) as List<dynamic>;
-    debugPrint(
-      '✅ [Cache] HIT — loading ${list.length} mosques from cache, skipping API',
-    );
+    if (kDebugMode) debugPrint('✅ [Cache] HIT — loading ${list.length} mosques from cache, skipping API');
     return list
         .map((e) => MosqueModel.fromCache(e as Map<String, dynamic>))
         .toList();
@@ -212,10 +210,7 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
         jsonEncode(mosques.map((m) => m.toJson()).toList()),
       ),
     ]);
-    debugPrint(
-      '💾 [Cache] Saved ${mosques.length} mosques at '
-      'lat:${pos.latitude}, lng:${pos.longitude}',
-    );
+    if (kDebugMode) debugPrint('💾 [Cache] Saved ${mosques.length} mosques at lat:${pos.latitude}, lng:${pos.longitude}');
   }
 
   void search(String query) {

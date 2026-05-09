@@ -35,8 +35,13 @@ class BottomNavScreen extends StatelessWidget {
       ],
       child: BlocListener<BottomNavCubit, BottomNavState>(
         listener: (context, state) {
-          if (state is BottomNavChanged && state.index == 1) {
-            context.read<MosqueSearchCubit>().startTracking();
+          if (state is BottomNavChanged) {
+            if (state.index == 1) {
+              context.read<MosqueSearchCubit>().startTracking();
+            } else {
+              // Stop GPS stream while on any other tab — battery saving.
+              context.read<MosqueSearchCubit>().stopTracking();
+            }
           }
         },
         child: BlocBuilder<BottomNavCubit, BottomNavState>(

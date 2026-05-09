@@ -3,10 +3,10 @@ import 'package:geolocator/geolocator.dart';
 
 class LocationService {
   Future<Position> getCurrentLocation() async {
-    debugPrint('[Loc] A — isLocationServiceEnabled?');
+    if (kDebugMode) debugPrint('[Loc] A — isLocationServiceEnabled?');
     final serviceEnabled = await Geolocator.isLocationServiceEnabled()
         .timeout(const Duration(seconds: 5));
-    debugPrint('[Loc] B — serviceEnabled=$serviceEnabled');
+    if (kDebugMode) debugPrint('[Loc] B — serviceEnabled=$serviceEnabled');
     if (!serviceEnabled) {
       throw Exception(
         'Location services are disabled. '
@@ -14,10 +14,10 @@ class LocationService {
       );
     }
 
-    debugPrint('[Loc] C — checkPermission');
+    if (kDebugMode) debugPrint('[Loc] C — checkPermission');
     final permission = await Geolocator.checkPermission()
         .timeout(const Duration(seconds: 5));
-    debugPrint('[Loc] D — permission=$permission');
+    if (kDebugMode) debugPrint('[Loc] D — permission=$permission');
 
     // Only guard; permission requesting belongs to HomeCubit / the caller.
     if (permission == LocationPermission.denied ||
@@ -28,7 +28,7 @@ class LocationService {
       );
     }
 
-    debugPrint('[Loc] E — getCurrentPosition (timeout 15s)');
+    if (kDebugMode) debugPrint('[Loc] E — getCurrentPosition (timeout 15s)');
     final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.medium,
@@ -40,7 +40,7 @@ class LocationService {
         'Location timed out. Please ensure GPS is enabled and try again.',
       ),
     );
-    debugPrint('[Loc] F — position=${pos.latitude},${pos.longitude}');
+    if (kDebugMode) debugPrint('[Loc] F — position=${pos.latitude},${pos.longitude}');
     return pos;
   }
 

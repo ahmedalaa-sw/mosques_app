@@ -12,7 +12,9 @@ class PrayerScheduleSection extends StatelessWidget {
 
   const PrayerScheduleSection({super.key, this.prayers});
 
-  static final List<PrayerModel> _fallbackPrayers = [
+  // Computed inside build so .tr() runs after EasyLocalization is ready and
+  // reacts correctly to locale changes.
+  List<PrayerModel> _fallbackPrayers() => [
     PrayerModel(name: 'fajr'.tr(), time: '05:22 AM', icon: Icons.wb_twilight),
     PrayerModel(name: 'sunrise'.tr(), time: '06:54 AM', icon: Icons.wb_sunny),
     PrayerModel(
@@ -28,7 +30,9 @@ class PrayerScheduleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectivePrayers = prayers ?? _fallbackPrayers;
+    // Single watch here — one rebuild instead of six independent ones.
+    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
+    final effectivePrayers = prayers ?? _fallbackPrayers();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +41,7 @@ class PrayerScheduleSection extends StatelessWidget {
         SizedBox(height: 8.h),
 
         for (int i = 0; i < effectivePrayers.length; i++) ...[
-          _PrayerRow(prayer: effectivePrayers[i]),
+          _PrayerRow(prayer: effectivePrayers[i], use24Hour: use24Hour),
           if (i < effectivePrayers.length - 1) SizedBox(height: 8.h),
         ],
       ],
@@ -98,12 +102,12 @@ class _PrayerRowTheme {
 
 class _PrayerRow extends StatelessWidget {
   final PrayerModel prayer;
+  final bool use24Hour;
 
-  const _PrayerRow({required this.prayer});
+  const _PrayerRow({required this.prayer, required this.use24Hour});
 
   @override
   Widget build(BuildContext context) {
-    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
     final formattedTime = TimeFormatHelper.format(prayer.time, use24Hour);
     final theme = prayer.isHighlighted
         ? _PrayerRowTheme.highlighted()
@@ -133,7 +137,7 @@ class _PrayerRow extends StatelessWidget {
               ),
             ),
 
-            if (theme.showActiveDot) ...[_ActiveDot(), SizedBox(width: 8.w)],
+            if (theme.showActiveDot) ...[const _ActiveDot(), SizedBox(width: 8.w)],
 
             Text(
               formattedTime,
@@ -150,13 +154,6 @@ class _PrayerRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _ActiveDot
-//
-// Small teal circle indicating the currently active prayer. Extracted so
-// the parent Row reads as a clean list of siblings rather than embedding
-// layout arithmetic inline.
-// ─────────────────────────────────────────────────────────────────────────────
 class _ActiveDot extends StatelessWidget {
   const _ActiveDot();
 
@@ -171,4 +168,3 @@ class _ActiveDot extends StatelessWidget {
     );
   }
 }
-

@@ -15,6 +15,9 @@ import '../utils/location_utils.dart';
 
 const _uniqueName         = 'prayerNotificationReschedule';
 const _uniqueNamePeriodic = 'prayerNotificationDailySync';
+// Bump this suffix whenever channel IDs or configs change so the one-time
+// setup re-runs on the next background execution after an update.
+const _kChannelsCreatedKey = 'bg_channels_created_v1';
 
 @pragma('vm:entry-point')
 void rescheduleCallbackDispatcher() {
@@ -76,52 +79,58 @@ class BackgroundRescheduleService {
       ),
     );
 
-    final android = plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    if (android != null) {
-      for (final id in kLegacyChannelIds) {
-        await android.deleteNotificationChannel(id);
-      }
-      await android.createNotificationChannel(
-        const AndroidNotificationChannel(
-          kPreAlertChannelId,
-          kPreAlertChannelName,
-          description: kPreAlertChannelDesc,
-          importance: Importance.high,
-          playSound: true,
-          enableVibration: true,
-          enableLights: true,
-        ),
-      );
-      for (final config in kPrayerConfigs.values) {
-        await android.createNotificationChannel(
-          AndroidNotificationChannel(
-            config.callChannelId,
-            config.channelName,
-            description: config.channelDescription,
-            importance: Importance.max,
-            playSound: true,
-            sound: RawResourceAndroidNotificationSound(config.callSound),
-            enableVibration: true,
-            enableLights: true,
-          ),
-        );
-        await android.createNotificationChannel(
-          AndroidNotificationChannel(
-            config.azanChannelId,
-            '${config.channelName} + Azan',
-            description: config.channelDescription,
-            importance: Importance.max,
-            playSound: true,
-            sound: RawResourceAndroidNotificationSound(config.azanSound),
-            enableVibration: true,
-            enableLights: true,
-          ),
-        );
-      }
-    }
-
     final prefs = await SharedPreferences.getInstance();
+
+    // Channel creation is idempotent but still costs 10+ platform-channel
+    // round-trips. Run only once per install/update, not every 6 hours.
+    final channelsDone = prefs.getBool(_kChannelsCreatedKey) ?? false;
+    if (!channelsDone) {
+      final android = plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        for (final id in kLegacyChannelIds) {
+          await android.deleteNotificationChannel(id);
+        }
+        await android.createNotificationChannel(
+          const AndroidNotificationChannel(
+            kPreAlertChannelId,
+            kPreAlertChannelName,
+            description: kPreAlertChannelDesc,
+            importance: Importance.high,
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+          ),
+        );
+        for (final config in kPrayerConfigs.values) {
+          await android.createNotificationChannel(
+            AndroidNotificationChannel(
+              config.callChannelId,
+              config.channelName,
+              description: config.channelDescription,
+              importance: Importance.max,
+              playSound: true,
+              sound: RawResourceAndroidNotificationSound(config.callSound),
+              enableVibration: true,
+              enableLights: true,
+            ),
+          );
+          await android.createNotificationChannel(
+            AndroidNotificationChannel(
+              config.azanChannelId,
+              '${config.channelName} + Azan',
+              description: config.channelDescription,
+              importance: Importance.max,
+              playSound: true,
+              sound: RawResourceAndroidNotificationSound(config.azanSound),
+              enableVibration: true,
+              enableLights: true,
+            ),
+          );
+        }
+      }
+      await prefs.setBool(_kChannelsCreatedKey, true);
+    }
     final lat = prefs.getDouble(prefsLat);
     final lng = prefs.getDouble(prefsLng);
 
@@ -179,16 +188,15 @@ class BackgroundRescheduleService {
       buildDayMap(today.add(const Duration(days: 1))),
     ];
 
-    // Cancel all existing notifications (today + tomorrow + legacy azan IDs).
-    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers * kDaysToSchedule; i++) {
-      await plugin.cancel(i);
-    }
-    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers * kDaysToSchedule; i++) {
-      await plugin.cancel(i);
-    }
-    for (int i = 300; i < 306; i++) {
-      await plugin.cancel(i);
-    }
+    // Cancel all existing notifications concurrently instead of sequentially.
+    await Future.wait([
+      for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers * kDaysToSchedule; i++)
+        plugin.cancel(i),
+      for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers * kDaysToSchedule; i++)
+        plugin.cancel(i),
+      for (int i = 300; i < 306; i++)
+        plugin.cancel(i),
+    ]);
 
     final now = DateTime.now();
     int scheduled = 0;

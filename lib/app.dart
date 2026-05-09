@@ -35,7 +35,6 @@ class MyApp extends StatelessWidget {
             splitScreenMode: true,
             builder: (context, child) {
               return MaterialApp(
-                key: Key(context.locale.languageCode),
                 debugShowCheckedModeBanner: false,
                 onGenerateRoute: appRouter.generateRoute,
                 initialRoute: initialRoute,

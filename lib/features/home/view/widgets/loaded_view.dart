@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
-import 'package:mosques_app/features/home/view/widgets/digital_clock_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_countdown_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_schedule_section.dart';
 
@@ -40,7 +39,11 @@ class LoadedView extends StatelessWidget {
             SizedBox(height: 12.h),
 
             // ── Upper section: live countdown card ───────────────────────────
-            PrayerCountdownSection(prayerTimes: prayerTimes),
+            // RepaintBoundary isolates the 1-second timer repaint so it does
+            // not dirty the BackdropFilter blur in GlassNavBar.
+            RepaintBoundary(
+              child: PrayerCountdownSection(prayerTimes: prayerTimes),
+            ),
 
             SizedBox(height: 16.h),
 

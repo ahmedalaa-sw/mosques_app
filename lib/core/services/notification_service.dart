@@ -364,19 +364,15 @@ class NotificationService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  Future<void> _cancelAll() async {
-    // Cancel today + tomorrow slots for both pre-alert and at-time
-    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers * kDaysToSchedule; i++) {
-      await _plugin.cancel(i);
-    }
-    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers * kDaysToSchedule; i++) {
-      await _plugin.cancel(i);
-    }
+  Future<void> _cancelAll() => Future.wait([
+    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers * kDaysToSchedule; i++)
+      _plugin.cancel(i),
+    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers * kDaysToSchedule; i++)
+      _plugin.cancel(i),
     // Cancel old azan IDs (300–305) from the previous two-step architecture.
-    for (int i = 300; i < 306; i++) {
-      await _plugin.cancel(i);
-    }
-  }
+    for (int i = 300; i < 306; i++)
+      _plugin.cancel(i),
+  ]);
 
   static void _onTap(NotificationResponse response) {
     debugPrint('[NotificationService] Tapped: ${response.payload}');
