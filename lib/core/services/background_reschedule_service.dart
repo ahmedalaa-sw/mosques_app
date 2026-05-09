@@ -1,7 +1,6 @@
 import 'dart:developer' as dev;
 import 'dart:ui' show Color;
 
-import 'package:adhan_dart/adhan_dart.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,6 +11,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'adhan_prayer_service.dart';
 import 'prayer_notification_config.dart';
+import '../utils/location_utils.dart';
 
 const _uniqueName         = 'prayerNotificationReschedule';
 const _uniqueNamePeriodic = 'prayerNotificationDailySync';
@@ -32,8 +32,8 @@ void rescheduleCallbackDispatcher() {
 class BackgroundRescheduleService {
   BackgroundRescheduleService._();
 
-  static const _prefsLat     = 'last_known_lat';
-  static const _prefsLng     = 'last_known_lng';
+  static const prefsLat      = 'last_known_lat';
+  static const prefsLng      = 'last_known_lng';
   static const _prefsAzanKey = 'azan_enabled';
 
   static Future<void> registerTasks() async {
@@ -55,18 +55,14 @@ class BackgroundRescheduleService {
 
   static Future<void> cacheLastLocation(double lat, double lng) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble(_prefsLat, lat);
-    await prefs.setDouble(_prefsLng, lng);
+    await prefs.setDouble(prefsLat, lat);
+    await prefs.setDouble(prefsLng, lng);
   }
 
+  // ── Core background work ──────────────────────────────────────────────────
+
   static Future<bool> _rescheduleAll() async {
-    tz.initializeTimeZones();
-    try {
-      final loc = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(loc));
-    } catch (_) {
-      tz.setLocalLocation(tz.UTC);
-    }
+    await _initTimezone();
 
     final plugin = FlutterLocalNotificationsPlugin();
     await plugin.initialize(
@@ -86,7 +82,6 @@ class BackgroundRescheduleService {
       for (final id in kLegacyChannelIds) {
         await android.deleteNotificationChannel(id);
       }
-
       await android.createNotificationChannel(
         const AndroidNotificationChannel(
           kPreAlertChannelId,
@@ -98,7 +93,6 @@ class BackgroundRescheduleService {
           enableLights: true,
         ),
       );
-
       for (final config in kPrayerConfigs.values) {
         await android.createNotificationChannel(
           AndroidNotificationChannel(
@@ -128,8 +122,8 @@ class BackgroundRescheduleService {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final lat = prefs.getDouble(_prefsLat);
-    final lng = prefs.getDouble(_prefsLng);
+    final lat = prefs.getDouble(prefsLat);
+    final lng = prefs.getDouble(prefsLng);
 
     double latitude, longitude;
     if (lat != null && lng != null) {
@@ -152,84 +146,160 @@ class BackgroundRescheduleService {
       }
     }
 
-    final prayerTimes = AdhanPrayerService.calculatePrayerTimes(
-      latitude: latitude,
-      longitude: longitude,
-    );
+    // Use cached country code so no geocoding network call is needed here.
+    final countryCode = prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+    final azanEnabled = prefs.getBool(_prefsAzanKey) ?? false;
 
+    // Build prayer maps for today and tomorrow using the sync (no-network) method.
     final today = DateTime.now();
-    DateTime toLocal(DateTime Function(PrayerTimes) getter) {
-      final d = getter(prayerTimes).toLocal();
-      return DateTime(today.year, today.month, today.day, d.hour, d.minute);
+
+    Map<String, DateTime> buildDayMap(DateTime day) {
+      final pt = AdhanPrayerService.calculatePrayerTimesSync(
+        latitude: latitude,
+        longitude: longitude,
+        countryCode: countryCode,
+        date: day,
+      );
+      DateTime toLocal(DateTime utc) {
+        final local = utc.toLocal();
+        return DateTime(day.year, day.month, day.day, local.hour, local.minute);
+      }
+      return {
+        'Fajr'   : toLocal(pt.fajr),
+        'Sunrise': toLocal(pt.sunrise),
+        'Dhuhr'  : toLocal(pt.dhuhr),
+        'Asr'    : toLocal(pt.asr),
+        'Maghrib': toLocal(pt.maghrib),
+        'Isha'   : toLocal(pt.isha),
+      };
     }
 
-    final prayers = <String, DateTime>{
-      'Fajr'   : toLocal((p) => p.fajr),
-      'Sunrise': toLocal((p) => p.sunrise),
-      'Dhuhr'  : toLocal((p) => p.dhuhr),
-      'Asr'    : toLocal((p) => p.asr),
-      'Maghrib': toLocal((p) => p.maghrib),
-      'Isha'   : toLocal((p) => p.isha),
-    };
+    final prayerDays = [
+      buildDayMap(today),
+      buildDayMap(today.add(const Duration(days: 1))),
+    ];
 
-    // Cancel all previous notifications (including old azan IDs 300–305).
-    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers; i++) {
+    // Cancel all existing notifications (today + tomorrow + legacy azan IDs).
+    for (int i = kPreAlertBaseId; i < kPreAlertBaseId + kMaxPrayers * kDaysToSchedule; i++) {
       await plugin.cancel(i);
     }
-    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers; i++) {
+    for (int i = kAtTimeBaseId; i < kAtTimeBaseId + kMaxPrayers * kDaysToSchedule; i++) {
       await plugin.cancel(i);
     }
     for (int i = 300; i < 306; i++) {
       await plugin.cancel(i);
     }
 
-    final azanEnabled = prefs.getBool(_prefsAzanKey) ?? false;
     final now = DateTime.now();
-    int preId = kPreAlertBaseId;
-    int atId  = kAtTimeBaseId;
+    int scheduled = 0;
 
-    for (final entry in prayers.entries) {
-      final name = entry.key;
-      final time = entry.value;
+    for (int dayIndex = 0; dayIndex < prayerDays.length; dayIndex++) {
+      final prayers = prayerDays[dayIndex];
+      int preId = kPreAlertBaseId + (dayIndex * kMaxPrayers);
+      int atId  = kAtTimeBaseId  + (dayIndex * kMaxPrayers);
 
-      final preTime = time.subtract(const Duration(minutes: 15));
-      if (!preTime.isBefore(now)) {
-        await plugin.zonedSchedule(
-          preId,
-          '🕌 $name (${_arabic(name)}) in 15 minutes',
-          'Get ready — $name starts at ${_fmt(time)}.',
-          tz.TZDateTime.from(preTime, tz.local),
-          _preAlertDetails(name),
-          androidScheduleMode: AndroidScheduleMode.alarmClock,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          payload: 'pre_alert:$name',
-        );
+      for (final entry in prayers.entries) {
+        final name = entry.key;
+        final time = entry.value;
+
+        final preTime = time.subtract(const Duration(minutes: 15));
+        if (!preTime.isBefore(now)) {
+          await plugin.zonedSchedule(
+            preId,
+            '🕌 $name (${_arabic(name)}) in 15 minutes',
+            'Get ready — $name starts at ${_fmt(time)}.',
+            tz.TZDateTime.from(preTime, tz.local),
+            _preAlertDetails(name),
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            payload: 'pre_alert:$name',
+          );
+          scheduled++;
+        }
+
+        if (!time.isBefore(now)) {
+          await plugin.zonedSchedule(
+            atId,
+            '🕌 $name (${_arabic(name)}) prayer time',
+            "It's time for $name prayer — ${_fmt(time)}.",
+            tz.TZDateTime.from(time, tz.local),
+            _atTimeDetails(name, azanEnabled: azanEnabled),
+            androidScheduleMode: AndroidScheduleMode.alarmClock,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            payload: 'at_time:$name',
+          );
+          scheduled++;
+        }
+
+        preId++;
+        atId++;
       }
-
-      if (!time.isBefore(now)) {
-        await plugin.zonedSchedule(
-          atId,
-          '🕌 $name (${_arabic(name)}) prayer time',
-          "It's time for $name prayer — ${_fmt(time)}.",
-          tz.TZDateTime.from(time, tz.local),
-          _atTimeDetails(name, azanEnabled: azanEnabled),
-          androidScheduleMode: AndroidScheduleMode.alarmClock,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          payload: 'at_time:$name',
-        );
-      }
-
-      preId++;
-      atId++;
     }
 
     dev.log(
-      '[BackgroundReschedule] Done — rescheduled ${prayers.length} prayers, '
-      'azan=${azanEnabled ? "on" : "off"}',
+      '[BackgroundReschedule] Done — $scheduled notifications, '
+      'azan=${azanEnabled ? "on" : "off"}, days=${prayerDays.length}',
     );
     return true;
+  }
+
+  // ── Timezone initialisation (mirrors NotificationService logic) ───────────
+
+  static Future<void> _initTimezone() async {
+    tz.initializeTimeZones();
+
+    // 1 — preferred
+    try {
+      final name = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(name));
+      return;
+    } catch (e) {
+      dev.log('[BackgroundReschedule] FlutterTimezone failed: $e');
+    }
+
+    // 2 — UTC-offset fallback
+    try {
+      final offset = DateTime.now().timeZoneOffset;
+      final name   = _ianaFromOffset(offset);
+      tz.setLocalLocation(tz.getLocation(name));
+      dev.log('[BackgroundReschedule] Timezone fallback: $name');
+      return;
+    } catch (_) {}
+
+    // 3 — last resort
+    dev.log('[BackgroundReschedule] WARNING: using UTC');
+    tz.setLocalLocation(tz.UTC);
+  }
+
+  static String _ianaFromOffset(Duration offset) {
+    const table = <int, String>{
+      -720: 'Etc/GMT+12',       -660: 'Pacific/Pago_Pago',
+      -600: 'Pacific/Honolulu', -570: 'Pacific/Marquesas',
+      -540: 'America/Anchorage',-480: 'America/Los_Angeles',
+      -420: 'America/Denver',   -360: 'America/Chicago',
+      -300: 'America/New_York', -240: 'America/Halifax',
+      -210: 'America/St_Johns', -180: 'America/Sao_Paulo',
+      -120: 'Atlantic/South_Georgia', -60: 'Atlantic/Azores',
+         0: 'Europe/London',       60: 'Europe/Paris',
+       120: 'Africa/Cairo',       180: 'Asia/Riyadh',
+       210: 'Asia/Tehran',        240: 'Asia/Dubai',
+       270: 'Asia/Kabul',         300: 'Asia/Karachi',
+       330: 'Asia/Kolkata',       345: 'Asia/Kathmandu',
+       360: 'Asia/Dhaka',         390: 'Asia/Yangon',
+       420: 'Asia/Bangkok',       480: 'Asia/Shanghai',
+       525: 'Australia/Eucla',    540: 'Asia/Tokyo',
+       570: 'Australia/Darwin',   600: 'Australia/Sydney',
+       660: 'Pacific/Noumea',     720: 'Pacific/Auckland',
+       780: 'Pacific/Apia',       840: 'Pacific/Kiritimati',
+    };
+    final minutes = offset.inMinutes;
+    if (table.containsKey(minutes)) return table[minutes]!;
+    final nearest = table.keys.reduce(
+      (a, b) => (a - minutes).abs() <= (b - minutes).abs() ? a : b,
+    );
+    return table[nearest]!;
   }
 
   // ── Notification details ──────────────────────────────────────────────────
