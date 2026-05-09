@@ -248,7 +248,15 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshCurrentPrayer();
+    if (state == AppLifecycleState.resumed) {
+      _refreshCurrentPrayer();
+      // Re-schedule after returning from system settings (e.g. after the user
+      // granted exact alarm permission or battery optimization exemption).
+      // schedulePrayerNotifications is cancel-then-reschedule, so this is safe
+      // to call on every resume.
+      final loaded = _loadedPrayerTimes;
+      if (loaded != null) _scheduleNotifications(loaded);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

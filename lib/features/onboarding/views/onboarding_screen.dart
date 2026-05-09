@@ -59,7 +59,14 @@ class _Body extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: 48.h),
+                  SizedBox(height: 16.h),
+
+                  // ── Language toggle ──────────────────────────────────────────
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: const _LanguageToggle(),
+                  ),
+                  SizedBox(height: 16.h),
 
                   // ── Logo ────────────────────────────────────────────────────
                   Center(
@@ -361,6 +368,71 @@ class _AnimatedSavingTextState extends State<_AnimatedSavingText> {
         fontSize: 16.sp,
         fontWeight: FontWeight.w700,
         color: AppColor.onPrimary,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _LanguageToggle — EN / عربي segmented pill
+// ─────────────────────────────────────────────────────────────────────────────
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final isAr = context.locale.languageCode == 'ar';
+    return Tooltip(
+      message: 'onboarding_language_tooltip'.tr(),
+      child: GestureDetector(
+        onTap: () => context.setLocale(isAr ? const Locale('en') : const Locale('ar')),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColor.surfaceContainer,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: AppColor.outlineVariant.withValues(alpha: 0.3),
+            ),
+          ),
+          padding: EdgeInsets.all(3.r),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _LangChip(label: 'EN', active: !isAr),
+              SizedBox(width: 2.w),
+              _LangChip(label: 'عربي', active: isAr),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LangChip extends StatelessWidget {
+  final String label;
+  final bool active;
+
+  const _LangChip({required this.label, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: active ? AppColor.primaryColor1 : Colors.transparent,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'IBMPlexSansArabic',
+          color: active ? AppColor.onPrimary : AppColor.textSecondary,
+          fontSize: 13.sp,
+          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+        ),
       ),
     );
   }

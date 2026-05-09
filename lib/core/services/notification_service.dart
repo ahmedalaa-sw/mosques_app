@@ -95,7 +95,9 @@ class NotificationService {
       }
 
       await android.requestNotificationsPermission();
-      await android.requestExactAlarmsPermission();
+      // Exact alarm permission is checked separately via canScheduleExactAlarms()
+      // and surfaced to the user from the home screen with an explanation dialog,
+      // rather than silently opening settings at startup.
     }
 
     if (Platform.isIOS) await _cacheIosImage();
@@ -189,6 +191,29 @@ class NotificationService {
       '[NotificationService] Scheduled $scheduled notifications '
       '(azan=${azanEnabled ? "on" : "off"}, days=${prayerDays.length})',
     );
+  }
+
+  /// Returns true if the app can schedule exact alarms (AlarmClock-mode).
+  /// On Android < 12 always returns true. On 12+ requires user to grant
+  /// SCHEDULE_EXACT_ALARM from system settings.
+  Future<bool> canScheduleExactAlarms() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      const ch = MethodChannel('com.example.mosques_app/system');
+      return await ch.invokeMethod<bool>('canScheduleExactAlarms') ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Opens the system "Alarms & reminders" settings page where the user can
+  /// grant SCHEDULE_EXACT_ALARM to this app.
+  Future<void> openExactAlarmSettings() async {
+    if (!Platform.isAndroid) return;
+    await init();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await android?.requestExactAlarmsPermission();
   }
 
   /// Shows an immediate test notification.

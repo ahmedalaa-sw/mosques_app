@@ -118,6 +118,7 @@
   "lat_label": "خط العرض: ",
   "lng_label": "خط الطول: ",
 
+  "onboarding_language_tooltip": "تغيير اللغة",
   "onboarding_subtitle": "اختر مدينتك للحصول على أوقات صلاة دقيقة فورًا",
   "select_country": "اختر الدولة",
   "select_city": "اختر المدينة",
@@ -127,6 +128,14 @@
   "saving": "جارٍ الحفظ",
   "use_gps_instead": "استخدم GPS بدلًا من ذلك",
   "onboarding_gps_note": "سيتم تحسين موقعك تلقائيًا عبر GPS",
+
+  "notif_exact_alarm_title": "السماح بتنبيهات الصلاة الدقيقة",
+  "notif_exact_alarm_body": "يحتاج المسجد إلى إذن لضبط تنبيهات دقيقة حتى تصلك إشعارات الصلاة في وقتها تمامًا — حتى عند خمول الهاتف. اضغط «سماح» لفتح الإعدادات.",
+  "notif_exact_alarm_action": "سماح",
+  "notif_battery_title": "تعطيل قيود البطارية",
+  "notif_battery_body": "قد تمنع إعدادات تحسين البطارية في هاتفك وصول إشعارات الصلاة عند إغلاق التطبيق. يرجى استثناء تطبيق المسجد لضمان وصول الإشعارات في وقتها دائمًا.",
+  "notif_battery_action": "استثناء التطبيق",
+  "notif_dismiss": "ليس الآن",
 
   "prayer_location": "موقع الصلاة",
   "prayer_location_auto": "تلقائي (GPS)",

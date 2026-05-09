@@ -118,6 +118,7 @@
   "lat_label": "Lat: ",
   "lng_label": "Lng: ",
 
+  "onboarding_language_tooltip": "Switch language",
   "onboarding_subtitle": "Select your city to get accurate prayer times instantly",
   "select_country": "Select Country",
   "select_city": "Select City",
@@ -127,6 +128,14 @@
   "saving": "Saving",
   "use_gps_instead": "Use GPS instead",
   "onboarding_gps_note": "Your location will refine automatically via GPS",
+
+  "notif_exact_alarm_title": "Allow Precise Prayer Alerts",
+  "notif_exact_alarm_body": "Al-Masjid needs permission to set exact alarms so your prayer notifications fire on time — even when the phone is idle. Tap Allow to open settings.",
+  "notif_exact_alarm_action": "Allow",
+  "notif_battery_title": "Disable Battery Restriction",
+  "notif_battery_body": "Your phone's battery optimization may block prayer notifications when the app is closed. Please exempt Al-Masjid to ensure notifications always arrive on time.",
+  "notif_battery_action": "Exempt App",
+  "notif_dismiss": "Not Now",
 
   "prayer_location": "Prayer Location",
   "prayer_location_auto": "Auto (GPS)",

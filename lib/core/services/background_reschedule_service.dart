@@ -15,9 +15,6 @@ import '../utils/location_utils.dart';
 
 const _uniqueName         = 'prayerNotificationReschedule';
 const _uniqueNamePeriodic = 'prayerNotificationDailySync';
-// Bump this suffix whenever channel IDs or configs change so the one-time
-// setup re-runs on the next background execution after an update.
-const _kChannelsCreatedKey = 'bg_channels_created_v1';
 
 @pragma('vm:entry-point')
 void rescheduleCallbackDispatcher() {
@@ -81,55 +78,52 @@ class BackgroundRescheduleService {
 
     final prefs = await SharedPreferences.getInstance();
 
-    // Channel creation is idempotent but still costs 10+ platform-channel
-    // round-trips. Run only once per install/update, not every 6 hours.
-    final channelsDone = prefs.getBool(_kChannelsCreatedKey) ?? false;
-    if (!channelsDone) {
-      final android = plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      if (android != null) {
-        for (final id in kLegacyChannelIds) {
-          await android.deleteNotificationChannel(id);
-        }
+    // createNotificationChannel is idempotent on Android — recreating an
+    // existing channel with the same ID is a no-op. We always run this so
+    // channels deleted from system settings are transparently restored.
+    final android = plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android != null) {
+      for (final id in kLegacyChannelIds) {
+        await android.deleteNotificationChannel(id);
+      }
+      await android.createNotificationChannel(
+        const AndroidNotificationChannel(
+          kPreAlertChannelId,
+          kPreAlertChannelName,
+          description: kPreAlertChannelDesc,
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+          enableLights: true,
+        ),
+      );
+      for (final config in kPrayerConfigs.values) {
         await android.createNotificationChannel(
-          const AndroidNotificationChannel(
-            kPreAlertChannelId,
-            kPreAlertChannelName,
-            description: kPreAlertChannelDesc,
-            importance: Importance.high,
+          AndroidNotificationChannel(
+            config.callChannelId,
+            config.channelName,
+            description: config.channelDescription,
+            importance: Importance.max,
             playSound: true,
+            sound: RawResourceAndroidNotificationSound(config.callSound),
             enableVibration: true,
             enableLights: true,
           ),
         );
-        for (final config in kPrayerConfigs.values) {
-          await android.createNotificationChannel(
-            AndroidNotificationChannel(
-              config.callChannelId,
-              config.channelName,
-              description: config.channelDescription,
-              importance: Importance.max,
-              playSound: true,
-              sound: RawResourceAndroidNotificationSound(config.callSound),
-              enableVibration: true,
-              enableLights: true,
-            ),
-          );
-          await android.createNotificationChannel(
-            AndroidNotificationChannel(
-              config.azanChannelId,
-              '${config.channelName} + Azan',
-              description: config.channelDescription,
-              importance: Importance.max,
-              playSound: true,
-              sound: RawResourceAndroidNotificationSound(config.azanSound),
-              enableVibration: true,
-              enableLights: true,
-            ),
-          );
-        }
+        await android.createNotificationChannel(
+          AndroidNotificationChannel(
+            config.azanChannelId,
+            '${config.channelName} + Azan',
+            description: config.channelDescription,
+            importance: Importance.max,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound(config.azanSound),
+            enableVibration: true,
+            enableLights: true,
+          ),
+        );
       }
-      await prefs.setBool(_kChannelsCreatedKey, true);
     }
     final lat = prefs.getDouble(prefsLat);
     final lng = prefs.getDouble(prefsLng);
