@@ -5,6 +5,8 @@ class PrayerNotificationConfig {
   final String channelDescription;
   final String callSound;   // raw resource name, e.g. 'fajr_call'
   final String azanSound;   // raw resource name, e.g. 'fajr_azan'
+  // True for prayers that have no Azan (e.g. Sunrise) — always uses callSound.
+  final bool alwaysCallOnly;
 
   const PrayerNotificationConfig({
     required this.callChannelId,
@@ -13,16 +15,17 @@ class PrayerNotificationConfig {
     required this.channelDescription,
     required this.callSound,
     required this.azanSound,
+    this.alwaysCallOnly = false,
   });
 
   String channelId({required bool azanEnabled}) =>
-      azanEnabled ? azanChannelId : callChannelId;
+      (!alwaysCallOnly && azanEnabled) ? azanChannelId : callChannelId;
 
   String channelDisplayName({required bool azanEnabled}) =>
-      azanEnabled ? '$channelName + Azan' : channelName;
+      (!alwaysCallOnly && azanEnabled) ? '$channelName + Azan' : channelName;
 
   String sound({required bool azanEnabled}) =>
-      azanEnabled ? azanSound : callSound;
+      (!alwaysCallOnly && azanEnabled) ? azanSound : callSound;
 }
 
 // ── Shared constants ──────────────────────────────────────────────────────────
@@ -63,6 +66,7 @@ const kPrayerConfigs = <String, PrayerNotificationConfig>{
     channelDescription: 'Notification for Sunrise time',
     callSound: 'sunrise_call',
     azanSound: 'sunrise_azan',
+    alwaysCallOnly: true,
   ),
   'Dhuhr': PrayerNotificationConfig(
     callChannelId: 'prayer_dhuhr_call_v1',
@@ -109,12 +113,13 @@ const kFallbackPrayerConfig = PrayerNotificationConfig(
 );
 
 /// Notification IDs.
-/// Pre-alert : 100–105
-/// At-time   : 200–205
+/// Pre-alert : 100–111  (today: 100–105, tomorrow: 106–111)
+/// At-time   : 200–211  (today: 200–205, tomorrow: 206–211)
 /// (Old azan IDs 300–305 are cancelled once during migration.)
-const kPreAlertBaseId = 100;
-const kAtTimeBaseId   = 200;
-const kMaxPrayers     = 6;
+const kPreAlertBaseId  = 100;
+const kAtTimeBaseId    = 200;
+const kMaxPrayers      = 6;
+const kDaysToSchedule  = 2;
 
 /// Arabic prayer names for notification titles.
 const kArabicNames = <String, String>{
