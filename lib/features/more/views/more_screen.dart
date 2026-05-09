@@ -9,8 +9,6 @@ import 'package:mosques_app/core/routing/routes.dart';
 import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/features/more/viewmodels/azan_cubit.dart';
 import 'package:mosques_app/features/more/viewmodels/azan_state.dart';
-import 'package:mosques_app/features/more/viewmodels/theme_cubit.dart';
-import 'package:mosques_app/features/more/viewmodels/theme_state.dart';
 import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
 import 'package:mosques_app/features/onboarding/viewmodels/onboarding_cubit.dart';
 
@@ -411,7 +409,7 @@ class _LocationRowState extends State<_LocationRow> {
         final changed = await Navigator.pushNamed(context, Routes.changeLocation);
         if (changed == true && mounted) {
           _load();
-          homeCubit.refreshFromManualLocation();
+          homeCubit.refreshPrayerTimes();
         }
       },
     );

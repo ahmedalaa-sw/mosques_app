@@ -26,6 +26,7 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
   static const _kCachedLat = AppConstants.cachedLat;
   static const _kCachedLng = AppConstants.cachedLng;
   static const _kCachedMosques = AppConstants.cachedMosques;
+  static const _kCachedLocale = AppConstants.cachedLocale;
   static const _kLocationThresholdMeters = AppConstants.locationThresholdMeters;
   static const _kStreamDistanceFilter =
       AppConstants.locationStreamDistanceFilterMeters;
@@ -69,7 +70,9 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
           position ?? await SharedLocationService.instance.getCurrentLocation();
       _lastFetchPosition = pos;
 
-      final cached = await _tryLoadFromCache(pos);
+      final lang = await AppPreferences.getString('app_locale') ?? 'en';
+
+      final cached = await _tryLoadFromCache(pos, lang);
       if (cached != null) {
         _all = cached;
         emit(MosqueSearchSuccess(_all));
@@ -80,9 +83,10 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       final mosques = await _repo.fetchNearbyMosques(
         lat: pos.latitude,
         lng: pos.longitude,
+        language: lang,
       );
 
-      await _saveToCache(pos, mosques);
+      await _saveToCache(pos, mosques, lang);
       _all = mosques;
       emit(MosqueSearchSuccess(_all));
     } catch (e) {
@@ -154,7 +158,7 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     debugPrint('[MosqueSearchCubit] Position stream error: $error');
   }
 
-  Future<List<MosqueModel>?> _tryLoadFromCache(Position pos) async {
+  Future<List<MosqueModel>?> _tryLoadFromCache(Position pos, String currentLang) async {
     debugPrint(
       '🔍 [Cache] Current GPS → lat:${pos.latitude}, lng:${pos.longitude}',
     );
@@ -188,6 +192,12 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
       return null;
     }
 
+    final cachedLocale = await AppPreferences.getString(_kCachedLocale);
+    if (cachedLocale != currentLang) {
+      debugPrint('❌ [Cache] MISS — locale changed ($cachedLocale → $currentLang)');
+      return null;
+    }
+
     final json = await AppPreferences.getString(_kCachedMosques);
     if (json == null) {
       debugPrint('❌ [Cache] MISS — no cached results, calling API');
@@ -203,10 +213,15 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
         .toList();
   }
 
-  Future<void> _saveToCache(Position pos, List<MosqueModel> mosques) async {
+  Future<void> _saveToCache(
+    Position pos,
+    List<MosqueModel> mosques,
+    String lang,
+  ) async {
     await Future.wait([
       AppPreferences.saveDouble(_kCachedLat, pos.latitude),
       AppPreferences.saveDouble(_kCachedLng, pos.longitude),
+      AppPreferences.saveString(_kCachedLocale, lang),
       AppPreferences.saveString(
         _kCachedMosques,
         jsonEncode(mosques.map((m) => m.toJson()).toList()),
@@ -214,7 +229,7 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
     ]);
     debugPrint(
       '💾 [Cache] Saved ${mosques.length} mosques at '
-      'lat:${pos.latitude}, lng:${pos.longitude}',
+      'lat:${pos.latitude}, lng:${pos.longitude} (lang: $lang)',
     );
   }
 

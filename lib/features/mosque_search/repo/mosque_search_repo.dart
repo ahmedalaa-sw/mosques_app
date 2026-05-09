@@ -37,6 +37,7 @@ class MosqueSearchRepo {
     required double lat,
     required double lng,
     int radius = AppConstants.defaultSearchRadiusMeters,
+    String language = 'en',
   }) async {
     DioException? lastError;
 
@@ -49,6 +50,7 @@ class MosqueSearchRepo {
             'radius': radius,
             'type': 'mosque',
             'key': EndpointConstants.placesApiKey,
+            'language': language,
           },
         );
 
