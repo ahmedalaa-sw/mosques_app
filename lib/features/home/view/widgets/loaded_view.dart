@@ -37,22 +37,17 @@ class LoadedView extends StatelessWidget {
             // // ── Digital clock ────────────────────────────────────────────────
             // DigitalClockSection(),
 
-            SizedBox(height: 24.h),
+            SizedBox(height: 12.h),
 
             // ── Upper section: live countdown card ───────────────────────────
             PrayerCountdownSection(prayerTimes: prayerTimes),
 
-            SizedBox(height: 35.h),
+            SizedBox(height: 16.h),
 
             // ── Lower section: full daily schedule ───────────────────────────
-            PrayerScheduleSection(
-              prayers: prayers,
-              latitude: prayerTimes.latitude,
-              longitude: prayerTimes.longitude,
-              methodName: prayerTimes.methodName,
-            ),
+            PrayerScheduleSection(prayers: prayers),
 
-            SizedBox(height: 100.h),
+            SizedBox(height: 80.h),
           ],
         ),
       ),

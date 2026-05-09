@@ -11,7 +11,7 @@ class MosqueScreenHeader extends StatelessWidget {
     return Text(
       'app_title'.tr(),
       style: TextStyle(
-        color: AppColor.primaryColor,
+        color: AppColor.appBarTextColor,
         fontSize: 22.sp,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.3,

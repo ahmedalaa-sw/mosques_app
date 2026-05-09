@@ -108,6 +108,9 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
   @override
   Widget build(BuildContext context) {
     final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
+    // 20 % of screen height gives a circle that leaves enough room for
+    // the full prayer schedule list without any scrolling.
+    final double circleSize = MediaQuery.of(context).size.height * 0.26;
 
     return Column(
       children: [
@@ -120,14 +123,15 @@ class _PrayerCountdownSectionState extends State<PrayerCountdownSection> {
             letterSpacing: 1.5,
           ),
         ),
-        SizedBox(height: 12.h),
+        SizedBox(height: 8.h),
         PrayerCountdownCard(
           currentPrayerName: _current.name,
           nextPrayerName: _next.name,
           remaining: _remaining,
           formattedCountdown: _formatCountdown(_remaining),
+          circleSize: circleSize,
         ),
-        SizedBox(height: 40.h),
+        SizedBox(height: 16.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
