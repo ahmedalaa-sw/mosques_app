@@ -3,7 +3,6 @@ class AppConstants {
   static const cachedLat = 'cached_lat';
   static const cachedLng = 'cached_lng';
   static const cachedMosques = 'cached_mosques';
-  static const cachedLocale = 'cached_locale';
 
   // Location
   // App-level threshold: re-fetch API only when user moves this far from the
