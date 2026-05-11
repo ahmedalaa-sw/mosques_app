@@ -48,3 +48,4 @@ app.*.map.json
 CLAUDE.md
 .agent/
 AGENTS.md
+.opencode/

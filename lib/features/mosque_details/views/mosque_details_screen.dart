@@ -144,7 +144,7 @@ class _ErrorView extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 decoration: BoxDecoration(
-                  color: AppColor.primaryContainer,
+                  color: AppColor.secondaryColor,
                   borderRadius: BorderRadius.circular(50.r),
                 ),
                 child: Text(

@@ -9,19 +9,12 @@ import 'package:mosques_app/features/home/model/home_model.dart';
 
 class PrayerScheduleSection extends StatelessWidget {
   final List<PrayerModel>? prayers;
-  final double? latitude;
-  final double? longitude;
-  final String? methodName;
 
-  const PrayerScheduleSection({
-    super.key,
-    this.prayers,
-    this.latitude,
-    this.longitude,
-    this.methodName,
-  });
+  const PrayerScheduleSection({super.key, this.prayers});
 
-  static final List<PrayerModel> _fallbackPrayers = [
+  // Computed inside build so .tr() runs after EasyLocalization is ready and
+  // reacts correctly to locale changes.
+  List<PrayerModel> _fallbackPrayers() => [
     PrayerModel(name: 'fajr'.tr(), time: '05:22 AM', icon: Icons.wb_twilight),
     PrayerModel(name: 'sunrise'.tr(), time: '06:54 AM', icon: Icons.wb_sunny),
     PrayerModel(
@@ -35,30 +28,21 @@ class PrayerScheduleSection extends StatelessWidget {
     PrayerModel(name: 'isha'.tr(), time: '08:44 PM', icon: Icons.nights_stay),
   ];
 
-  bool get _hasLocation => latitude != null && longitude != null;
-
-  String get _locationLabel =>
-      '${'lat_label'.tr()}${latitude!.toStringAsFixed(0)},  '
-      '${'lng_label'.tr()}${longitude!.toStringAsFixed(0)}';
-
   @override
   Widget build(BuildContext context) {
-    final effectivePrayers = prayers ?? _fallbackPrayers;
+    // Single watch here — one rebuild instead of six independent ones.
+    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
+    final effectivePrayers = prayers ?? _fallbackPrayers();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(methodName: methodName),
-        SizedBox(height: 12.h),
+        const _SectionHeader(),
+        SizedBox(height: 8.h),
 
         for (int i = 0; i < effectivePrayers.length; i++) ...[
-          _PrayerRow(prayer: effectivePrayers[i]),
+          _PrayerRow(prayer: effectivePrayers[i], use24Hour: use24Hour),
           if (i < effectivePrayers.length - 1) SizedBox(height: 8.h),
-        ],
-
-        if (_hasLocation) ...[
-          SizedBox(height: 16.h),
-          _LocationBadge(label: _locationLabel),
         ],
       ],
     );
@@ -66,59 +50,17 @@ class PrayerScheduleSection extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String? methodName;
-
-  const _SectionHeader({this.methodName});
+  const _SectionHeader();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'prayer_schedule'.tr(),
-                style: TextStyle(
-                  color: AppColor.white,
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (methodName != null && methodName!.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.only(top: 4.h),
-                  child: Text(
-                    '${'method_label'.tr()}$methodName',
-                    style: TextStyle(
-                      color: AppColor.textSecondary,
-                      fontSize: 11.sp,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        TextButton(
-          onPressed: () {},
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Text(
-            'full_month'.tr(),
-            style: TextStyle(
-              color: AppColor.accentTeal,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
+    return Text(
+      'prayer_schedule'.tr(),
+      style: TextStyle(
+        color: AppColor.white,
+        fontSize: 20.sp,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
@@ -160,12 +102,12 @@ class _PrayerRowTheme {
 
 class _PrayerRow extends StatelessWidget {
   final PrayerModel prayer;
+  final bool use24Hour;
 
-  const _PrayerRow({required this.prayer});
+  const _PrayerRow({required this.prayer, required this.use24Hour});
 
   @override
   Widget build(BuildContext context) {
-    final use24Hour = context.watch<TimeFormatCubit>().state.is24Hour;
     final formattedTime = TimeFormatHelper.format(prayer.time, use24Hour);
     final theme = prayer.isHighlighted
         ? _PrayerRowTheme.highlighted()
@@ -178,7 +120,7 @@ class _PrayerRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
         child: Row(
           children: [
             Icon(prayer.icon, color: theme.iconColor, size: 24.sp),
@@ -195,7 +137,7 @@ class _PrayerRow extends StatelessWidget {
               ),
             ),
 
-            if (theme.showActiveDot) ...[_ActiveDot(), SizedBox(width: 8.w)],
+            if (theme.showActiveDot) ...[const _ActiveDot(), SizedBox(width: 8.w)],
 
             Text(
               formattedTime,
@@ -212,13 +154,6 @@ class _PrayerRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _ActiveDot
-//
-// Small teal circle indicating the currently active prayer. Extracted so
-// the parent Row reads as a clean list of siblings rather than embedding
-// layout arithmetic inline.
-// ─────────────────────────────────────────────────────────────────────────────
 class _ActiveDot extends StatelessWidget {
   const _ActiveDot();
 
@@ -230,55 +165,6 @@ class _ActiveDot extends StatelessWidget {
         color: AppColor.accentTeal,
       ),
       child: SizedBox(width: 8.w, height: 8.h),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// _LocationBadge
-//
-// Displays formatted latitude/longitude when location data is available.
-// Uses a pre-formatted label string rather than computing it inline.
-// Color literal replaced with AppColor.darkCard — the opacity is applied
-// once via the const withOpacity call rather than inside build().
-// ─────────────────────────────────────────────────────────────────────────────
-class _LocationBadge extends StatelessWidget {
-  final String label;
-
-  // Pre-computed semi-transparent fill — avoids creating a new Color object
-  // on every rebuild by keeping it as a field rather than calling
-  // withOpacity() inline inside build().
-  static final Color _fill = AppColor.darkCard.withOpacity(0.5);
-
-  const _LocationBadge({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: _fill,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(12.w),
-        child: Row(
-          children: [
-            Icon(Icons.location_on, color: AppColor.accentTeal, size: 16.sp),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: AppColor.textSecondary,
-                  fontSize: 11.sp,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

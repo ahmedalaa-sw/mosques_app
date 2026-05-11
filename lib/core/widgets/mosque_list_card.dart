@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -85,12 +86,11 @@ class _MosqueIconBox extends StatelessWidget {
           borderRadius: BorderRadius.circular(14.r),
         ),
         child: imageUrl != null
-            ? Image.network(
-                imageUrl!,
+            ? CachedNetworkImage(
+                imageUrl: imageUrl!,
                 fit: BoxFit.cover,
-                loadingBuilder: (_, child, progress) =>
-                    progress == null ? child : _fallbackIcon(),
-                errorBuilder: (context, error, stackTrace) => _fallbackIcon(),
+                placeholder: (context, url) => _fallbackIcon(),
+                errorWidget: (context, url, error) => _fallbackIcon(),
               )
             : _fallbackIcon(),
       ),

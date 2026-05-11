@@ -7,12 +7,12 @@ class AppConstants {
   // Location
   // App-level threshold: re-fetch API only when user moves this far from the
   // position used in the last successful fetch.
-  static const locationThresholdMeters = 250;
+  static const locationThresholdMeters = 2000;
 
   // OS-level stream filter: geolocator suppresses emissions until the device
   // has moved this many metres. Keeps the stream lean between 50m emissions
   // while the 250m threshold guards the actual API call.
-  static const locationStreamDistanceFilterMeters = 50;
+  static const locationStreamDistanceFilterMeters = 400;
 
-  static const defaultSearchRadiusMeters = 250;
+  static const defaultSearchRadiusMeters = 2000;
 }

@@ -56,6 +56,8 @@
   "nearby_sanctuaries": "المساجد القريبة",
   "finding_location": "جارٍ تحديد موقعك...",
   "found_count": "{} مسجد",
+  "no_mosques_nearby": "لا توجد مساجد قريبة.\nاضغط أدناه للتحقق من موقعك الحالي.",
+  "check_my_location": "تحقق من موقعي",
 
   "mosque_details": "تفاصيل المسجد",
   "directions": "الاتجاهات",
@@ -89,6 +91,9 @@
   "error": "حدث خطأ ما",
   "retry": "إعادة المحاولة",
   "no_data": "لا توجد بيانات",
+  "search_timeout": "انتهت مهلة الطلب. تحقق من اتصالك وحاول مجددًا.",
+  "search_no_internet": "لا يوجد اتصال بالإنترنت. تحقق من شبكتك.",
+  "search_server_error": "خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقًا.",
 
   "location_services_disabled": "خدمات الموقع معطّلة. يرجى تفعيل GPS.",
   "location_permission_denied": "تم رفض إذن الموقع.",
@@ -111,5 +116,30 @@
   "notification_test_body": "إذا رأيت هذا على شاشتك الرئيسية، فالإشعارات تعمل.",
 
   "lat_label": "خط العرض: ",
-  "lng_label": "خط الطول: "
+  "lng_label": "خط الطول: ",
+
+  "onboarding_language_tooltip": "تغيير اللغة",
+  "onboarding_subtitle": "اختر مدينتك للحصول على أوقات صلاة دقيقة فورًا",
+  "select_country": "اختر الدولة",
+  "select_city": "اختر المدينة",
+  "search_country": "ابحث عن دولة...",
+  "search_city": "ابحث عن مدينة...",
+  "get_started": "ابدأ الآن",
+  "saving": "جارٍ الحفظ",
+  "use_gps_instead": "استخدم GPS بدلًا من ذلك",
+  "onboarding_gps_note": "سيتم تحسين موقعك تلقائيًا عبر GPS",
+
+  "notif_exact_alarm_title": "السماح بتنبيهات الصلاة الدقيقة",
+  "notif_exact_alarm_body": "يحتاج المسجد إلى إذن لضبط تنبيهات دقيقة حتى تصلك إشعارات الصلاة في وقتها تمامًا — حتى عند خمول الهاتف. اضغط «سماح» لفتح الإعدادات.",
+  "notif_exact_alarm_action": "سماح",
+  "notif_battery_title": "تعطيل قيود البطارية",
+  "notif_battery_body": "قد تمنع إعدادات تحسين البطارية في هاتفك وصول إشعارات الصلاة عند إغلاق التطبيق. يرجى استثناء تطبيق المسجد لضمان وصول الإشعارات في وقتها دائمًا.",
+  "notif_battery_action": "استثناء التطبيق",
+  "notif_dismiss": "ليس الآن",
+
+  "prayer_location": "موقع الصلاة",
+  "prayer_location_auto": "تلقائي (GPS)",
+  "change_location": "تغيير الموقع",
+  "change_location_subtitle": "اختر مدينتك لتحديث أوقات الصلاة",
+  "save_location": "حفظ الموقع"
 }

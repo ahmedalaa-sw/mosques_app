@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/constants/app_style.dart';
+import 'package:mosques_app/core/routing/routes.dart';
 
 class LocalizationScreen extends StatelessWidget {
   const LocalizationScreen({super.key});
@@ -49,14 +50,26 @@ class LocalizationScreen extends StatelessWidget {
                       nativeName: 'English',
                       code: 'en',
                       isSelected: context.locale.languageCode == 'en',
-                      onTap: () => context.setLocale(const Locale('en')),
+                      onTap: () {
+                        context.setLocale(const Locale('en'));
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          Routes.bottomNavScreen,
+                          (route) => false,
+                        );
+                      },
                     ),
                     _DividerLine(),
                     _LanguageOption(
                       nativeName: 'العربية',
                       code: 'ar',
                       isSelected: context.locale.languageCode == 'ar',
-                      onTap: () => context.setLocale(const Locale('ar')),
+                      onTap: () {
+                        context.setLocale(const Locale('ar'));
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          Routes.bottomNavScreen,
+                          (route) => false,
+                        );
+                      },
                     ),
                   ],
                 ),

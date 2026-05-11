@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
-import 'package:mosques_app/core/utils/prayer_wall_clock_format.dart';
 
 class PrayerModel {
   final String name;
@@ -17,6 +17,8 @@ class PrayerModel {
   });
 }
 
+/// Prayer times model produced by offline adhan_dart calculations.
+/// Works worldwide — no network dependency.
 class AladhanPrayerTimesModel {
   final String fajr;
   final String sunrise;
@@ -48,60 +50,70 @@ class AladhanPrayerTimesModel {
     required double longitude,
     String? methodName,
   }) {
-    // adhan builds each prayer with DateTime.utc through TimeComponents.utcDate.
-    // These are genuine UTC timelines (isUtc == true); project with toLocal().
+    // ✅ تعريف المتغير واستخدام القيمة الافتراضية إذا لم يتم تمرير methodName
+    final finalMethodName = methodName ?? AdhanPrayerService.defaultMethodName;
+
     return AladhanPrayerTimesModel(
-      fajr: PrayerWallClockFormat.hourMinute(prayerTimes.fajr),
-      sunrise: PrayerWallClockFormat.hourMinute(prayerTimes.sunrise),
-      dhuhr: PrayerWallClockFormat.hourMinute(prayerTimes.dhuhr),
-      asr: PrayerWallClockFormat.hourMinute(prayerTimes.asr),
-      maghrib: PrayerWallClockFormat.hourMinute(prayerTimes.maghrib),
-      isha: PrayerWallClockFormat.hourMinute(prayerTimes.isha),
+      fajr: _fmt(prayerTimes.fajr),
+      sunrise: _fmt(prayerTimes.sunrise),
+      dhuhr: _fmt(prayerTimes.dhuhr),
+      asr: _fmt(prayerTimes.asr),
+      maghrib: _fmt(prayerTimes.maghrib),
+      isha: _fmt(prayerTimes.isha),
       latitude: latitude,
       longitude: longitude,
       date: DateTime.now(),
-      methodName: methodName ?? AdhanPrayerService.defaultMethodName,
+      methodName: finalMethodName,
     );
   }
 
+  /// Converts UTC DateTime from adhan_dart to local time, then formats as HH:mm.
+  static String _fmt(DateTime? t) {
+    if (t == null) return '00:00';
+    // .toLocal() is the critical call — adhan_dart gives UTC, we need local.
+    final local = t.toLocal();
+    return '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+  }
+
   List<PrayerModel> toHousePrayerModels(String? currentPrayer) => [
-        PrayerModel(
-          name: 'Fajr',
-          time: fajr,
-          icon: Icons.wb_twilight,
-          isHighlighted: currentPrayer == 'Fajr',
-        ),
-        PrayerModel(
-          name: 'Sunrise',
-          time: sunrise,
-          icon: Icons.wb_sunny,
-          isHighlighted: currentPrayer == 'Sunrise',
-        ),
-        PrayerModel(
-          name: 'Dhuhr',
-          time: dhuhr,
-          icon: Icons.wb_sunny,
-          isHighlighted: currentPrayer == 'Dhuhr',
-        ),
-        PrayerModel(
-          name: 'Asr',
-          time: asr,
-          icon: Icons.wb_sunny,
-          isHighlighted: currentPrayer == 'Asr',
-        ),
-        PrayerModel(
-          name: 'Maghrib',
-          time: maghrib,
-          icon: Icons.wb_twilight,
-          isHighlighted: currentPrayer == 'Maghrib',
-        ),
-        PrayerModel(
-          name: 'Isha',
-          time: isha,
-          icon: Icons.nights_stay,
-          isHighlighted: currentPrayer == 'Isha',
-        ),
-      ];
+    PrayerModel(
+      name: 'fajr'.tr(),
+      time: fajr,
+      icon: Icons.wb_twilight,
+      isHighlighted: currentPrayer == 'fajr'.tr(),
+    ),
+    PrayerModel(
+      name: 'sunrise'.tr(),
+      time: sunrise,
+      icon: Icons.wb_sunny,
+      isHighlighted: currentPrayer == 'sunrise'.tr(),
+    ),
+    PrayerModel(
+      name: 'dhuhr'.tr(),
+      time: dhuhr,
+      icon: Icons.wb_sunny,
+      isHighlighted: currentPrayer == 'dhuhr'.tr(),
+    ),
+    PrayerModel(
+      name: 'asr'.tr(),
+      time: asr,
+      icon: Icons.wb_sunny,
+      isHighlighted: currentPrayer == 'asr'.tr(),
+    ),
+    PrayerModel(
+      name: 'maghrib'.tr(),
+      time: maghrib,
+      icon: Icons.wb_twilight,
+      isHighlighted: currentPrayer == 'maghrib'.tr(),
+    ),
+    PrayerModel(
+      name: 'isha'.tr(),
+      time: isha,
+      icon: Icons.nights_stay,
+      isHighlighted: currentPrayer == 'isha'.tr(),
+    ),
+  ];
 
   @override
   String toString() =>

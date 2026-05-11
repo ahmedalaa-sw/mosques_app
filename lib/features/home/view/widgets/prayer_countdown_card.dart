@@ -1,27 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PrayerCountdownCard  (Task D — pure display widget)
-//
-// Receives all data as constructor parameters; contains zero business logic,
-// zero timers, and zero Bloc references. Fully testable with hardcoded values.
-//
-// Parameters
-// ──────────
-// currentPrayerName  — e.g. "Dhuhr"
-// nextPrayerName     — e.g. "Asr"
-// remaining          — used to choose font size (compact for ≥ 1 hour)
-// formattedCountdown — pre-formatted by PrayerCountdownSection:
-//                      "MM:SS" or "H:MM:SS"
-// ─────────────────────────────────────────────────────────────────────────────
 class PrayerCountdownCard extends StatelessWidget {
   final String currentPrayerName;
   final String nextPrayerName;
   final Duration remaining;
   final String formattedCountdown;
+  // Diameter of the circle in logical pixels — computed by the parent
+  // from MediaQuery so it scales with every screen size.
+  final double circleSize;
 
   const PrayerCountdownCard({
     super.key,
@@ -29,17 +17,21 @@ class PrayerCountdownCard extends StatelessWidget {
     required this.nextPrayerName,
     required this.remaining,
     required this.formattedCountdown,
+    required this.circleSize,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Shrink the countdown font slightly when hours are present so the longer
-    // string fits comfortably inside the circular container.
-    final double countdownFontSize = remaining.inHours > 0 ? 30.sp : 40.sp;
+    // All sizes derived from circleSize so the card stays proportional
+    // regardless of which device it renders on.
+    final nameFont      = circleSize * 0.155;
+    final badgeFont     = circleSize * 0.050;
+    final nextFont      = circleSize * 0.062;
+    final countFont     = circleSize * (remaining.inHours > 0 ? 0.132 : 0.165);
 
     return Container(
-      width: 220.w,
-      height: 240.h,
+      width: circleSize,
+      height: circleSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
@@ -47,7 +39,7 @@ class PrayerCountdownCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff88d6c8).withOpacity(0.1),
+            color: const Color(0xff88d6c8).withValues(alpha: 0.1),
             blurRadius: 30,
             spreadRadius: 5,
           ),
@@ -56,24 +48,25 @@ class PrayerCountdownCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // ── Current prayer name ───────────────────────────────────────────
           Text(
             currentPrayerName,
             style: TextStyle(
               fontFamily: 'IBMPlexSansArabic',
               color: AppColor.accentTeal,
-              fontSize: 36.sp,
+              fontSize: nameFont,
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: circleSize * 0.033),
 
-          // ── ONGOING badge ─────────────────────────────────────────────────
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+            padding: EdgeInsets.symmetric(
+              horizontal: circleSize * 0.044,
+              vertical: circleSize * 0.016,
+            ),
             decoration: BoxDecoration(
-              color: AppColor.badgeGold.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12.r),
+              color: AppColor.badgeGold.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(circleSize * 0.066),
               border: Border.all(color: AppColor.badgeGold, width: 1),
             ),
             child: Text(
@@ -81,34 +74,32 @@ class PrayerCountdownCard extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'IBMPlexSansArabic',
                 color: AppColor.badgeGold,
-                fontSize: 10.sp,
+                fontSize: badgeFont,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1,
               ),
             ),
           ),
-          SizedBox(height: 14.h),
+          SizedBox(height: circleSize * 0.044),
 
-          // ── "Next: X in" label ────────────────────────────────────────────
           Text(
-            '${'next_prayer'.tr()}$nextPrayerName in',
+            '${'next_prayer'.tr()}$nextPrayerName',
             style: TextStyle(
               fontFamily: 'IBMPlexSansArabic',
               color: AppColor.textSecondary,
-              fontSize: 13.sp,
+              fontSize: nextFont,
             ),
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: circleSize * 0.022),
 
-          // ── Live countdown ────────────────────────────────────────────────
-          // FontFeature.tabularFigures() ensures digits are fixed-width so
-          // the text does not shift horizontally as numbers change each second.
+          // FontFeature.tabularFigures() keeps digits fixed-width so the
+          // text doesn't shift horizontally as numbers change each second.
           Text(
             formattedCountdown,
             style: TextStyle(
               fontFamily: 'IBMPlexSansArabic',
               color: AppColor.white,
-              fontSize: countdownFontSize,
+              fontSize: countFont,
               fontWeight: FontWeight.w700,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),

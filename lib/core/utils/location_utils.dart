@@ -1,13 +1,21 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationUtils {
-  static const _countryKey = 'cached_country_code';
-  static const _latKey = 'cached_lat';
-  static const _lngKey = 'cached_lng';
+  /// Exposed so background services and cubits can read the cached value
+  /// directly from SharedPreferences without going through geocoding.
+  static const countryCodePrefsKey = 'cached_country_code';
 
-  /// Regions used for calculation-method inference (offline, approximate).
-  static String? _approximateOfflineRegion(double lat, double lng) {
+  static const _countryKey = countryCodePrefsKey;
+  // Distinct from AppConstants.cachedLat/Lng (used by MosqueSearchCubit) to
+  // prevent the two caches from stomping each other in SharedPreferences.
+  static const _latKey = 'loc_utils_lat';
+  static const _lngKey = 'loc_utils_lng';
+
+  /// 🧠 محاولة تحديد الدولة بدون نت (تقريبية)
+  static String? _detectOffline(double lat, double lng) {
     /// 🇪🇬 Egypt
     if (lat >= 22 && lat <= 32 && lng >= 25 && lng <= 36) {
       return 'EG';
@@ -23,30 +31,23 @@ class LocationUtils {
       return 'SA';
     }
 
-    /// 🇺🇸 Contiguous USA (Mountain View falls here).
-    /// Excludes overlapping northern Canada by longitude/latitude heuristics.
-    if (lat >= 24.0 &&
-        lat <= 50.0 &&
-        lng >= -125.0 &&
-        lng <= -66.0) {
+    /// 🇺🇸 Contiguous USA (Mountain View falls here)
+    if (lat >= 24.0 && lat <= 50.0 && lng >= -125.0 && lng <= -66.0) {
       return 'US';
     }
 
-    /// 🇨🇦 Canada (mainland, coarse).
-    if (lat >= 41.0 &&
-        lat <= 70.0 &&
-        lng >= -141.0 &&
-        lng <= -52.0) {
+    /// 🇨🇦 Canada (mainland, coarse)
+    if (lat >= 41.0 && lat <= 70.0 && lng >= -141.0 && lng <= -52.0) {
       return 'CA';
     }
 
-    return null;
+    return null; // fallback
   }
 
   /// Sync guess for isolates / non-await code paths (no SharedPreferences).
   /// Returns `null` when unknown — caller should fall back to a global default.
   static String? offlineCountryIsoGuessForPrayer(double lat, double lng) =>
-      _approximateOfflineRegion(lat, lng);
+      _detectOffline(lat, lng);
 
   /// 📍 هل المستخدم اتحرك مسافة كبيرة؟
   static bool _hasMoved(
@@ -74,28 +75,33 @@ class LocationUtils {
 
   static double _deg2rad(double deg) => deg * (pi / 180);
 
-  /// Offline-only country/code resolver.
-  static Future<String> getCountryCode(double lat, double lng) async {
+  /// 🌍 Main function
+  static Future<String> getCountryCode(
+      double lat, double lng) async {
+    if (kDebugMode) debugPrint('[Country] A — getCountryCode lat=$lat lng=$lng');
     final prefs = await SharedPreferences.getInstance();
 
     final cachedCountry = prefs.getString(_countryKey);
     final oldLat = prefs.getDouble(_latKey);
     final oldLng = prefs.getDouble(_lngKey);
+    if (kDebugMode) debugPrint('[Country] B — cachedCountry=$cachedCountry');
 
-    /// 📍 لو المستخدم اتحرك → امسح الكاش
     if (cachedCountry != null &&
         oldLat != null &&
         oldLng != null &&
         _hasMoved(oldLat, oldLng, lat, lng)) {
+      if (kDebugMode) debugPrint('[Country] C — moved, clearing cache');
       await prefs.remove(_countryKey);
     }
 
-    /// ✅ استخدم الكاش لو موجود
     final newCached = prefs.getString(_countryKey);
-    if (newCached != null) return newCached;
+    if (newCached != null) {
+      if (kDebugMode) debugPrint('[Country] D — returning cached: $newCached');
+      return newCached;
+    }
 
-    /// ⚡ حاول offline detection
-    final offline = _approximateOfflineRegion(lat, lng);
+    final offline = _detectOffline(lat, lng);
+    if (kDebugMode) debugPrint('[Country] E — offline detection: $offline');
     if (offline != null) {
       await prefs.setString(_countryKey, offline);
       await prefs.setDouble(_latKey, lat);
@@ -103,10 +109,21 @@ class LocationUtils {
       return offline;
     }
 
-    // Fully offline fallback.
-    await prefs.setString(_countryKey, 'US');
-    await prefs.setDouble(_latKey, lat);
-    await prefs.setDouble(_lngKey, lng);
-    return 'US';
+    if (kDebugMode) debugPrint('[Country] F — calling geocoding...');
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lng)
+          .timeout(const Duration(seconds: 5), onTimeout: () => <Placemark>[]);
+      if (kDebugMode) debugPrint('[Country] G — geocoding returned ${placemarks.length} results');
+      if (placemarks.isEmpty) return 'US';
+      final code = placemarks.first.isoCountryCode ?? 'US';
+      if (kDebugMode) debugPrint('[Country] H — geocoded country: $code');
+      await prefs.setString(_countryKey, code);
+      await prefs.setDouble(_latKey, lat);
+      await prefs.setDouble(_lngKey, lng);
+      return code;
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Country] ERROR — geocoding failed: $e');
+      return 'US';
+    }
   }
 }

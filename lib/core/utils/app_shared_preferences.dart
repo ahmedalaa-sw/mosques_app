@@ -16,6 +16,12 @@ class AppPreferences {
   static Future<String?> getString(String key) async =>
       (await _prefs).getString(key);
 
+  static Future<void> saveBool(String key, {required bool value}) async =>
+      (await _prefs).setBool(key, value);
+
+  static Future<bool?> getBool(String key) async =>
+      (await _prefs).getBool(key);
+
   static Future<void> remove(String key) async =>
       (await _prefs).remove(key);
 }

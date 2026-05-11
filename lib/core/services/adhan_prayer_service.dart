@@ -1,5 +1,4 @@
 import 'package:adhan_dart/adhan_dart.dart';
-import 'package:flutter/foundation.dart';
 import 'package:mosques_app/features/home/model/prayer_method_mapper.dart';
 import '../utils/location_utils.dart';
 
@@ -8,7 +7,8 @@ class AdhanPrayerService {
 
   static const String defaultMethodName = 'AdhanCalculation';
 
-  // ── async version used by HomeRepository ──────────────────────────────────
+  /// Async version — resolves country code via geocoding if not cached.
+  /// Use this on the foreground (home screen load).
   static Future<PrayerTimes> calculatePrayerTime({
     required double latitude,
     required double longitude,
@@ -17,49 +17,34 @@ class AdhanPrayerService {
     final countryCode = await LocationUtils.getCountryCode(latitude, longitude);
     final params = PrayerMethodMapper.fromCountry(countryCode);
     params.madhab = Madhab.shafi;
-    debugPrint(
-      '[AdhanPrayerService] Calculating with country=$countryCode, '
-      'lat=$latitude, lng=$longitude',
-    );
-
-    final now = DateTime.now();
-
-    // Gregorian calendar anchor; SolarTime reads only year/month/day (Julian).
-    final calendar = DateTime(now.year, now.month, now.day);
     return PrayerTimes(
       coordinates: coordinates,
-      date: DateTime.utc(calendar.year, calendar.month, calendar.day),
+      date: DateTime.now(),
       calculationParameters: params,
       precision: true,
     );
   }
 
-  // ── sync version used by BackgroundRescheduleService ──────────────────────
-  // The background isolate cannot use async/await at the top level, so we
-  // expose a synchronous variant. The signature is calculatePrayerTimes
-  // (plural) to match how BackgroundRescheduleService calls it.
-  static PrayerTimes calculatePrayerTimes({
+  /// Sync version — no network, no geocoding.
+  /// Use this in background tasks and when toggling azan preference,
+  /// where the country code is already cached in SharedPreferences.
+  ///
+  /// [countryCode] — ISO-3166-1 alpha-2 code (e.g. 'EG'); defaults to 'US'
+  ///                 which maps to Muslim World League (safe global default).
+  /// [date]        — date for which to calculate; defaults to today.
+  static PrayerTimes calculatePrayerTimesSync({
     required double latitude,
     required double longitude,
-    CalculationParameters? params,
+    String countryCode = 'US',
+    DateTime? date,
   }) {
     final coordinates = Coordinates(latitude, longitude);
-    final inferred = LocationUtils.offlineCountryIsoGuessForPrayer(latitude, longitude);
-
-    CalculationParameters calculationParams =
-        params ??
-        (inferred != null
-            ? PrayerMethodMapper.fromCountry(inferred)
-            : CalculationMethodParameters.muslimWorldLeague());
-    calculationParams.madhab = Madhab.shafi;
-
-    final now = DateTime.now();
-    final calendar = DateTime(now.year, now.month, now.day);
-
+    final params = PrayerMethodMapper.fromCountry(countryCode);
+    params.madhab = Madhab.shafi;
     return PrayerTimes(
       coordinates: coordinates,
-      date: DateTime.utc(calendar.year, calendar.month, calendar.day),
-      calculationParameters: calculationParams,
+      date: date ?? DateTime.now(),
+      calculationParameters: params,
       precision: true,
     );
   }

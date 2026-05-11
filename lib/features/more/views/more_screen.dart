@@ -6,10 +6,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/constants/app_style.dart';
 import 'package:mosques_app/core/routing/routes.dart';
+import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/features/more/viewmodels/azan_cubit.dart';
 import 'package:mosques_app/features/more/viewmodels/azan_state.dart';
-import 'package:mosques_app/features/more/viewmodels/theme_cubit.dart';
-import 'package:mosques_app/features/more/viewmodels/theme_state.dart';
+import 'package:mosques_app/features/home/view/cubit/home_cubit.dart';
+import 'package:mosques_app/features/onboarding/viewmodels/onboarding_cubit.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -228,6 +229,8 @@ class _PreferencesGroup extends StatelessWidget {
             // _ThemeToggleRow(),
             _DividerLine(),
             _AzanToggleRow(),
+            _DividerLine(),
+            _LocationRow(),
           ],
         ),
       ],
@@ -333,6 +336,85 @@ class _LanguageRow extends StatelessWidget {
 //     );
 //   }
 // }
+
+class _LocationRow extends StatefulWidget {
+  @override
+  State<_LocationRow> createState() => _LocationRowState();
+}
+
+class _LocationRowState extends State<_LocationRow> {
+  String? _cityName;
+  String? _cityNameAr;
+  String? _countryName;
+  String? _countryNameAr;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final cityEn = await AppPreferences.getString(OnboardingCubit.kCachedCityName);
+    final cityAr = await AppPreferences.getString(OnboardingCubit.kCachedCityNameAr);
+    final countryEn = await AppPreferences.getString(OnboardingCubit.kCachedCountryName);
+    final countryAr = await AppPreferences.getString(OnboardingCubit.kCachedCountryNameAr);
+    if (mounted) {
+      setState(() {
+        _cityName = cityEn;
+        _cityNameAr = cityAr;
+        _countryName = countryEn;
+        _countryNameAr = countryAr;
+      });
+    }
+  }
+
+  String _locationLabel(BuildContext context) {
+    final isAr = context.locale.languageCode == 'ar';
+    final city = isAr ? (_cityNameAr ?? _cityName) : _cityName;
+    final country = isAr ? (_countryNameAr ?? _countryName) : _countryName;
+    if (city != null && country != null) return '$city، $country';
+    if (city != null) return city;
+    return 'prayer_location_auto'.tr();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsRow(
+      icon: Icons.location_on_outlined,
+      title: 'prayer_location'.tr(),
+      iconColor: AppColor.primaryColor1,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              _locationLabel(context),
+              overflow: TextOverflow.ellipsis,
+              style: AppStyle.regular14.copyWith(
+                color: AppColor.onSurfaceVariant,
+              ),
+            ),
+          ),
+          SizedBox(width: 4.w),
+          Icon(
+            Icons.chevron_right,
+            color: AppColor.outlineVariant,
+            size: 20.sp,
+          ),
+        ],
+      ),
+      onTap: () async {
+        final homeCubit = context.read<HomeCubit>();
+        final changed = await Navigator.pushNamed(context, Routes.changeLocation);
+        if (changed == true && mounted) {
+          _load();
+          homeCubit.refreshPrayerTimes();
+        }
+      },
+    );
+  }
+}
 
 class _HelpInfoGroup extends StatelessWidget {
   @override

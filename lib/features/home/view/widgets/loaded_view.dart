@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
-import 'package:mosques_app/features/home/view/widgets/digital_clock_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_countdown_section.dart';
 import 'package:mosques_app/features/home/view/widgets/prayer_schedule_section.dart';
 
@@ -37,22 +36,21 @@ class LoadedView extends StatelessWidget {
             // // ── Digital clock ────────────────────────────────────────────────
             // DigitalClockSection(),
 
-            SizedBox(height: 24.h),
+            SizedBox(height: 12.h),
 
             // ── Upper section: live countdown card ───────────────────────────
-            PrayerCountdownSection(prayerTimes: prayerTimes),
-
-            SizedBox(height: 35.h),
-
-            // ── Lower section: full daily schedule ───────────────────────────
-            PrayerScheduleSection(
-              prayers: prayers,
-              latitude: prayerTimes.latitude,
-              longitude: prayerTimes.longitude,
-              methodName: prayerTimes.methodName,
+            // RepaintBoundary isolates the 1-second timer repaint so it does
+            // not dirty the BackdropFilter blur in GlassNavBar.
+            RepaintBoundary(
+              child: PrayerCountdownSection(prayerTimes: prayerTimes),
             ),
 
-            SizedBox(height: 100.h),
+            SizedBox(height: 16.h),
+
+            // ── Lower section: full daily schedule ───────────────────────────
+            PrayerScheduleSection(prayers: prayers),
+
+            SizedBox(height: 80.h),
           ],
         ),
       ),
