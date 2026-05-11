@@ -13,6 +13,10 @@ import 'prayer_notification_config.dart';
 /// Each prayer has two Android channels (call-only / call+azan merged).
 /// [schedulePrayerNotifications] picks the right channel based on [azanEnabled],
 /// so a single call is all callers need — no separate azan scheduling.
+///
+/// Notifications are scheduled using [ianaTimezone] (the prayer location's
+/// timezone) so they fire at the correct wall-clock time regardless of the
+/// device's timezone setting.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -126,11 +130,17 @@ class NotificationService {
   ///   call-only or the merged call+azan audio file, based on [azanEnabled]
   ///
   /// [prayerDays] — ordered list of day maps (index 0 = today, 1 = tomorrow …).
-  /// Each map: prayer name → scheduled DateTime (local time).
+  /// Each map: prayer name → scheduled TZDateTime in the prayer location's timezone.
   /// Supports up to [kDaysToSchedule] days.
+  ///
+  /// [ianaTimezone] — the IANA timezone name for the prayer location (e.g.
+  /// 'Asia/Riyadh'). Used to resolve [tz.Location] for scheduling. The DateTime
+  /// values in [prayerDays] should already be TZDateTime instances in this
+  /// timezone. Falls back to [tz.local] if not provided (device timezone).
   Future<void> schedulePrayerNotifications(
     List<Map<String, DateTime>> prayerDays, {
     required bool azanEnabled,
+    String? ianaTimezone,
   }) async {
     if (!_initialized) {
       debugPrint('[NotificationService] Not initialized — skipping');
@@ -138,6 +148,19 @@ class NotificationService {
     }
 
     await _cancelAll();
+
+    // Resolve the prayer location's timezone for TZDateTime scheduling.
+    // Callers that build TZDateTime values (like HomeCubit) already pass
+    // location-aware DateTimes, so this mainly ensures consistent resolution
+    // for any raw DateTime values that slip through.
+    tz.Location location = tz.local;
+    if (ianaTimezone != null) {
+      try {
+        location = tz.getLocation(ianaTimezone);
+      } catch (_) {
+        // Keep the fallback to tz.local
+      }
+    }
 
     final now = DateTime.now();
     int scheduled = 0;
@@ -151,13 +174,21 @@ class NotificationService {
         final name = entry.key;
         final time = entry.value;
 
-        final preTime = time.subtract(const Duration(minutes: 15));
+        // Ensure we have a proper TZDateTime for scheduling.
+        // If the caller already provided a TZDateTime in the correct location,
+        // TZDateTime.from is a no-op (same location). If it's a raw DateTime,
+        // this converts it to the prayer location's timezone.
+        final tzTime = time is tz.TZDateTime
+            ? time
+            : tz.TZDateTime.from(time, location);
+
+        final preTime = tzTime.subtract(const Duration(minutes: 15));
         if (preTime.isAfter(now)) {
           await _plugin.zonedSchedule(
             preId,
             '🕌 $name (${_arabic(name)}) in 15 minutes',
-            'Get ready — $name starts at ${_fmt(time)}.',
-            tz.TZDateTime.from(preTime, tz.local),
+            'Get ready — $name starts at ${_fmt(tzTime)}.',
+            tz.TZDateTime.from(preTime, location),
             _preAlertDetails(name),
             androidScheduleMode: AndroidScheduleMode.alarmClock,
             uiLocalNotificationDateInterpretation:
@@ -167,12 +198,12 @@ class NotificationService {
           scheduled++;
         }
 
-        if (time.isAfter(now)) {
+        if (tzTime.isAfter(now)) {
           await _plugin.zonedSchedule(
             atId,
             '🕌 $name (${_arabic(name)}) prayer time',
-            "It's time for $name prayer — ${_fmt(time)}.",
-            tz.TZDateTime.from(time, tz.local),
+            "It's time for $name prayer — ${_fmt(tzTime)}.",
+            tz.TZDateTime.from(tzTime, location),
             _atTimeDetails(name, azanEnabled: azanEnabled),
             androidScheduleMode: AndroidScheduleMode.alarmClock,
             uiLocalNotificationDateInterpretation:
@@ -189,7 +220,8 @@ class NotificationService {
 
     debugPrint(
       '[NotificationService] Scheduled $scheduled notifications '
-      '(azan=${azanEnabled ? "on" : "off"}, days=${prayerDays.length})',
+      '(azan=${azanEnabled ? "on" : "off"}, days=${prayerDays.length}, '
+      'tz=$ianaTimezone)',
     );
   }
 
@@ -333,8 +365,6 @@ class NotificationService {
   }
 
   /// Returns a representative IANA timezone name for the given UTC [offset].
-  /// Finds the closest match (in minutes) from a curated table that covers
-  /// every standard UTC offset including half-hour and 45-minute zones.
   static String _ianaFromOffset(Duration offset) {
     const table = <int, String>{
       -720: 'Etc/GMT+12',
@@ -351,30 +381,30 @@ class NotificationService {
       -180: 'America/Sao_Paulo',
       -120: 'Atlantic/South_Georgia',
       -60:  'Atlantic/Azores',
-         0: 'Europe/London',
-        60: 'Europe/Paris',
-       120: 'Africa/Cairo',
-       180: 'Asia/Riyadh',
-       210: 'Asia/Tehran',
-       240: 'Asia/Dubai',
-       270: 'Asia/Kabul',
-       300: 'Asia/Karachi',
-       330: 'Asia/Kolkata',
-       345: 'Asia/Kathmandu',
-       360: 'Asia/Dhaka',
-       390: 'Asia/Yangon',
-       420: 'Asia/Bangkok',
-       480: 'Asia/Shanghai',
-       525: 'Australia/Eucla',
-       540: 'Asia/Tokyo',
-       570: 'Australia/Darwin',
-       600: 'Australia/Sydney',
-       630: 'Australia/Lord_Howe',
-       660: 'Pacific/Noumea',
-       720: 'Pacific/Auckland',
-       765: 'Pacific/Chatham',
-       780: 'Pacific/Apia',
-       840: 'Pacific/Kiritimati',
+          0: 'Europe/London',
+         60: 'Europe/Paris',
+        120: 'Africa/Cairo',
+        180: 'Asia/Riyadh',
+        210: 'Asia/Tehran',
+        240: 'Asia/Dubai',
+        270: 'Asia/Kabul',
+        300: 'Asia/Karachi',
+        330: 'Asia/Kolkata',
+        345: 'Asia/Kathmandu',
+        360: 'Asia/Dhaka',
+        390: 'Asia/Yangon',
+        420: 'Asia/Bangkok',
+        480: 'Asia/Shanghai',
+        525: 'Australia/Eucla',
+        540: 'Asia/Tokyo',
+        570: 'Australia/Darwin',
+        600: 'Australia/Sydney',
+        630: 'Australia/Lord_Howe',
+        660: 'Pacific/Noumea',
+        720: 'Pacific/Auckland',
+        765: 'Pacific/Chatham',
+        780: 'Pacific/Apia',
+        840: 'Pacific/Kiritimati',
     };
 
     final minutes = offset.inMinutes;

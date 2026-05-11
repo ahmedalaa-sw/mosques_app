@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:adhan_dart/adhan_dart.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
+import 'package:mosques_app/core/utils/timezone_resolver.dart';
 
 class PrayerModel {
   final String name;
@@ -18,7 +18,8 @@ class PrayerModel {
 }
 
 /// Prayer times model produced by offline adhan_dart calculations.
-/// Works worldwide — no network dependency.
+/// All time strings are converted from UTC to the prayer location's local
+/// timezone using [TimezoneResolver], NOT the device's timezone.
 class AladhanPrayerTimesModel {
   final String fajr;
   final String sunrise;
@@ -30,6 +31,10 @@ class AladhanPrayerTimesModel {
   final double longitude;
   final DateTime date;
   final String methodName;
+  // IANA timezone name for the prayer location (e.g. 'Asia/Riyadh').
+  // Stored so notification scheduling and prayer-transition logic can
+  // convert times without re-resolving the timezone.
+  final String ianaTimezone;
 
   AladhanPrayerTimesModel({
     required this.fajr,
@@ -41,39 +46,31 @@ class AladhanPrayerTimesModel {
     required this.latitude,
     required this.longitude,
     required this.date,
+    required this.ianaTimezone,
     this.methodName = AdhanPrayerService.defaultMethodName,
   });
 
-  factory AladhanPrayerTimesModel.fromAdhanPrayerTimes({
-    required PrayerTimes prayerTimes,
+  factory AladhanPrayerTimesModel.fromPrayerCalculationResult({
+    required PrayerCalculationResult result,
     required double latitude,
     required double longitude,
     String? methodName,
   }) {
-    // ✅ تعريف المتغير واستخدام القيمة الافتراضية إذا لم يتم تمرير methodName
+    final tz = result.ianaTimezone;
     final finalMethodName = methodName ?? AdhanPrayerService.defaultMethodName;
-
     return AladhanPrayerTimesModel(
-      fajr: _fmt(prayerTimes.fajr),
-      sunrise: _fmt(prayerTimes.sunrise),
-      dhuhr: _fmt(prayerTimes.dhuhr),
-      asr: _fmt(prayerTimes.asr),
-      maghrib: _fmt(prayerTimes.maghrib),
-      isha: _fmt(prayerTimes.isha),
+      fajr: TimezoneResolver.formatHhMm(result.prayerTimes.fajr, tz),
+      sunrise: TimezoneResolver.formatHhMm(result.prayerTimes.sunrise, tz),
+      dhuhr: TimezoneResolver.formatHhMm(result.prayerTimes.dhuhr, tz),
+      asr: TimezoneResolver.formatHhMm(result.prayerTimes.asr, tz),
+      maghrib: TimezoneResolver.formatHhMm(result.prayerTimes.maghrib, tz),
+      isha: TimezoneResolver.formatHhMm(result.prayerTimes.isha, tz),
       latitude: latitude,
       longitude: longitude,
-      date: DateTime.now(),
+      date: TimezoneResolver.nowAt(tz),
+      ianaTimezone: tz,
       methodName: finalMethodName,
     );
-  }
-
-  /// Converts UTC DateTime from adhan_dart to local time, then formats as HH:mm.
-  static String _fmt(DateTime? t) {
-    if (t == null) return '00:00';
-    // .toLocal() is the critical call — adhan_dart gives UTC, we need local.
-    final local = t.toLocal();
-    return '${local.hour.toString().padLeft(2, '0')}:'
-        '${local.minute.toString().padLeft(2, '0')}';
   }
 
   List<PrayerModel> toHousePrayerModels(String? currentPrayer) => [
@@ -119,5 +116,5 @@ class AladhanPrayerTimesModel {
   String toString() =>
       'AladhanPrayerTimesModel(fajr: $fajr, dhuhr: $dhuhr, asr: $asr, '
       'maghrib: $maghrib, isha: $isha, method: $methodName, '
-      'lat: $latitude, lng: $longitude)';
+      'lat: $latitude, lng: $longitude, tz: $ianaTimezone)';
 }

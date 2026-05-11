@@ -10,9 +10,11 @@ import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/core/services/shared_location_service.dart';
 import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/core/utils/location_utils.dart';
+import 'package:mosques_app/core/utils/timezone_resolver.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
@@ -96,20 +98,24 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
       final countryCode =
           prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
-      final prayerTimes = AdhanPrayerService.calculatePrayerTimesSync(
+      final ianaTimezone = prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
+          TimezoneResolver.fromCountryCode(countryCode);
+      final result = AdhanPrayerService.calculatePrayerTimesSync(
         latitude: lat,
         longitude: lng,
         countryCode: countryCode,
+        ianaTimezone: ianaTimezone,
       );
       _onCacheLoaded(
-        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
-          prayerTimes: prayerTimes,
+        AladhanPrayerTimesModel.fromPrayerCalculationResult(
+          result: result,
           latitude: lat,
           longitude: lng,
         ),
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Home] _tryInstantLoadFromCache: $e');
       return false;
     }
   }
@@ -142,20 +148,22 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
         return;
       }
       final countryCode = await LocationUtils.getCountryCode(lat, lng, forceRefresh: true);
-      final prayerTimes = AdhanPrayerService.calculatePrayerTimesSync(
+      final ianaTimezone = TimezoneResolver.fromCountryCode(countryCode);
+      final result = AdhanPrayerService.calculatePrayerTimesSync(
         latitude: lat,
         longitude: lng,
         countryCode: countryCode,
+        ianaTimezone: ianaTimezone,
       );
-      _onLoaded(
-        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
-          prayerTimes: prayerTimes,
-          latitude: lat,
-          longitude: lng,
-        ),
+      final model = AladhanPrayerTimesModel.fromPrayerCalculationResult(
+        result: result,
+        latitude: lat,
+        longitude: lng,
       );
+      _onLoaded(model);
       await BackgroundRescheduleService.cacheLastLocation(lat, lng);
       await AppPreferences.saveString(LocationUtils.countryCodePrefsKey, countryCode);
+      await AppPreferences.saveString(TimezoneResolver.ianaTimezonePrefsKey, ianaTimezone);
     } catch (e) {
       debugPrint('[Home] refreshAfterManualLocationChange error: $e');
       await loadPrayerTimes();
@@ -207,7 +215,19 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       prayerTimes.latitude,
       prayerTimes.longitude,
     );
+    _cacheTimezone(prayerTimes.ianaTimezone);
     _scheduleNextPrayerTransition(prayerTimes);
+  }
+
+  Future<void> _cacheTimezone(String ianaTimezone) async {
+    try {
+      await AppPreferences.saveString(
+        TimezoneResolver.ianaTimezonePrefsKey,
+        ianaTimezone,
+      );
+    } catch (_) {
+      // Non-critical — next load will resolve timezone again
+    }
   }
 
   /// Sets a one-shot [Timer] that fires exactly when the next prayer starts.
@@ -216,26 +236,32 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   ///
   /// After the last prayer of the day (Isha) the timer fires at midnight+1min
   /// so [loadPrayerTimes] can recalculate for the new date.
+  ///
+  /// Timer delay is computed using the prayer location's timezone so that
+  /// the countdown is accurate regardless of the device's local timezone.
   void _scheduleNextPrayerTransition(AladhanPrayerTimesModel prayerTimes) {
     _prayerTransitionTimer?.cancel();
 
-    final now = DateTime.now();
+    // Use the prayer location's timezone for "now" — this is critical when
+    // the device is in a different timezone than the prayer location.
+    final location = tz.getLocation(prayerTimes.ianaTimezone);
+    final now = tz.TZDateTime.now(location);
 
     final upcomingPrayerTimes = [
-      _toTodayDateTime(prayerTimes.fajr),
-      _toTodayDateTime(prayerTimes.sunrise),
-      _toTodayDateTime(prayerTimes.dhuhr),
-      _toTodayDateTime(prayerTimes.asr),
-      _toTodayDateTime(prayerTimes.maghrib),
-      _toTodayDateTime(prayerTimes.isha),
+      _toLocationDateTime(prayerTimes.fajr, location, now),
+      _toLocationDateTime(prayerTimes.sunrise, location, now),
+      _toLocationDateTime(prayerTimes.dhuhr, location, now),
+      _toLocationDateTime(prayerTimes.asr, location, now),
+      _toLocationDateTime(prayerTimes.maghrib, location, now),
+      _toLocationDateTime(prayerTimes.isha, location, now),
     ].where((t) => t.isAfter(now)).toList();
 
     if (upcomingPrayerTimes.isNotEmpty) {
       final next = upcomingPrayerTimes.first;
       _prayerTransitionTimer = Timer(next.difference(now), _onPrayerTransition);
     } else {
-      // All prayers done for today — reload at midnight for tomorrow's schedule.
-      final midnight = DateTime(now.year, now.month, now.day + 1, 0, 1);
+      // All prayers done for today — reload at midnight+1min in the location tz
+      final midnight = tz.TZDateTime(location, now.year, now.month, now.day + 1, 0, 1);
       _prayerTransitionTimer = Timer(
         midnight.difference(now),
         loadPrayerTimes,
@@ -286,8 +312,6 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       _refreshCurrentPrayer();
       // Re-schedule after returning from system settings (e.g. after the user
       // granted exact alarm permission or battery optimization exemption).
-      // schedulePrayerNotifications is cancel-then-reschedule, so this is safe
-      // to call on every resume.
       final loaded = _loadedPrayerTimes;
       if (loaded != null) _scheduleNotifications(loaded);
     }
@@ -295,9 +319,12 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  /// Determines which prayer is currently active based on the current time
+  /// in the prayer location's timezone.
   String? _getCurrentPrayerName(AladhanPrayerTimesModel prayerTimes) {
     try {
-      final now = DateTime.now();
+      final location = tz.getLocation(prayerTimes.ianaTimezone);
+      final now = tz.TZDateTime.now(location);
       final currentMinutes = now.hour * 60 + now.minute;
 
       final prayers = [
@@ -335,28 +362,44 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
     return h * 60 + m;
   }
 
-  DateTime _toTodayDateTime(String hhmm) {
-    final now = DateTime.now();
+  /// Converts an "HH:mm" string into a [TZDateTime] on [now]'s date in the
+  /// prayer location's timezone. This is the timezone-aware replacement for the
+  /// old [_toTodayDateTime] that used the device timezone.
+  tz.TZDateTime _toLocationDateTime(
+    String hhmm,
+    tz.Location location,
+    tz.TZDateTime now,
+  ) {
     final parts = hhmm.split(':');
     final h = int.tryParse(parts[0]) ?? 0;
     final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
-    return DateTime(now.year, now.month, now.day, h, m);
+    return tz.TZDateTime(location, now.year, now.month, now.day, h, m);
   }
 
   void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) async {
     final prefs = await SharedPreferences.getInstance();
     final azanEnabled = prefs.getBool('azan_enabled') ?? false;
     final countryCode = prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+    final ianaTimezone = prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
+        prayerTimes.ianaTimezone;
 
-    final today = DateTime.now();
-    final tomorrow = today.add(const Duration(days: 1));
+    final location = tz.getLocation(ianaTimezone);
+    final today = tz.TZDateTime.now(location);
 
-    Map<String, DateTime> buildDayMap(DateTime day, AladhanPrayerTimesModel times) {
+    // Calculate tomorrow based on the location's timezone
+    final tomorrowCalcDate = TimezoneResolver.todayAt(ianaTimezone)
+        .add(const Duration(days: 1));
+
+    Map<String, DateTime> buildDayMap(
+      DateTime day,
+      AladhanPrayerTimesModel times,
+      tz.Location loc,
+    ) {
       DateTime toDateTime(String hhmm) {
         final parts = hhmm.split(':');
         final h = int.tryParse(parts[0]) ?? 0;
         final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
-        return DateTime(day.year, day.month, day.day, h, m);
+        return tz.TZDateTime(loc, day.year, day.month, day.day, h, m);
       }
       return {
         'Fajr'   : toDateTime(times.fajr),
@@ -368,21 +411,31 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       };
     }
 
-    final tomorrowRaw = AdhanPrayerService.calculatePrayerTimesSync(
+    final tomorrowResult = AdhanPrayerService.calculatePrayerTimesSync(
       latitude: prayerTimes.latitude,
       longitude: prayerTimes.longitude,
       countryCode: countryCode,
-      date: tomorrow,
+      ianaTimezone: ianaTimezone,
+      date: tomorrowCalcDate,
     );
-    final tomorrowModel = AladhanPrayerTimesModel.fromAdhanPrayerTimes(
-      prayerTimes: tomorrowRaw,
+    final tomorrowModel = AladhanPrayerTimesModel.fromPrayerCalculationResult(
+      result: tomorrowResult,
       latitude: prayerTimes.latitude,
       longitude: prayerTimes.longitude,
     );
 
+    // Today's date in the location timezone for building TZDateTime
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final tomorrowDate = DateTime(today.year, today.month, today.day)
+        .add(const Duration(days: 1));
+
     await NotificationService.instance.schedulePrayerNotifications(
-      [buildDayMap(today, prayerTimes), buildDayMap(tomorrow, tomorrowModel)],
+      [
+        buildDayMap(todayDate, prayerTimes, location),
+        buildDayMap(tomorrowDate, tomorrowModel, location),
+      ],
       azanEnabled: azanEnabled,
+      ianaTimezone: ianaTimezone,
     );
   }
 

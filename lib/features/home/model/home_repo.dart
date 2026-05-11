@@ -32,14 +32,14 @@ class HomeRepository {
     double longitude,
   ) async {
     try {
-      final prayerTimes = await AdhanPrayerService.calculatePrayerTime(
+      final result = await AdhanPrayerService.calculatePrayerTime(
         latitude: latitude,
         longitude: longitude,
       ).timeout(const Duration(seconds: 10));
 
       return Right(
-        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
-          prayerTimes: prayerTimes,
+        AladhanPrayerTimesModel.fromPrayerCalculationResult(
+          result: result,
           latitude: latitude,
           longitude: longitude,
         ),

@@ -2,8 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
 import 'package:mosques_app/core/utils/location_utils.dart';
-import 'package:mosques_app/features/home/model/home_model.dart';
+import 'package:mosques_app/core/utils/timezone_resolver.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'azan_state.dart';
 
 class AzanCubit extends Cubit<AzanState> {
@@ -30,6 +31,7 @@ class AzanCubit extends Cubit<AzanState> {
 
   /// Recalculates today's and tomorrow's prayer times from the cached location
   /// and reschedules all notifications using the correct audio for [enabled].
+  /// Uses the cached IANA timezone to convert times correctly.
   Future<void> _rescheduleWithNewPreference(
     bool enabled,
     SharedPreferences prefs,
@@ -39,44 +41,82 @@ class AzanCubit extends Cubit<AzanState> {
       final lng = prefs.getDouble(_prefsLng);
       if (lat == null || lng == null) return;
 
-      // Read cached country code so we don't need a network call here.
+      // Read cached country code and timezone — no network calls here.
       final countryCode = prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+      final ianaTimezone = prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
+          TimezoneResolver.fromCountryCode(countryCode);
 
-      final today    = DateTime.now();
-      final tomorrow = today.add(const Duration(days: 1));
+      final location = tz.getLocation(ianaTimezone);
+      final todayCalcDate = TimezoneResolver.todayAt(ianaTimezone);
+      final tomorrowCalcDate = todayCalcDate.add(const Duration(days: 1));
 
-      Map<String, DateTime> buildDayMap(DateTime day) {
-        // calculatePrayerTimesSync is sync — no await needed, no geocoding.
-        final raw = AdhanPrayerService.calculatePrayerTimesSync(
+      Map<String, DateTime> buildDayMap(DateTime calcDate) {
+        final result = AdhanPrayerService.calculatePrayerTimesSync(
           latitude: lat,
           longitude: lng,
           countryCode: countryCode,
-          date: day,
+          ianaTimezone: ianaTimezone,
+          date: calcDate,
         );
-        final model = AladhanPrayerTimesModel.fromAdhanPrayerTimes(
-          prayerTimes: raw,
-          latitude: lat,
-          longitude: lng,
-        );
-        DateTime toDateTime(String hhmm) {
+        // Convert UTC prayer times to location-local wall-clock HH:mm
+        String fmt(DateTime? utc) => TimezoneResolver.formatHhMm(utc, ianaTimezone);
+
+        final fajrStr    = fmt(result.prayerTimes.fajr);
+        final sunriseStr = fmt(result.prayerTimes.sunrise);
+        final dhuhrStr   = fmt(result.prayerTimes.dhuhr);
+        final asrStr     = fmt(result.prayerTimes.asr);
+        final maghribStr = fmt(result.prayerTimes.maghrib);
+        final ishaStr    = fmt(result.prayerTimes.isha);
+
+        // Build TZDateTime in the prayer location's timezone for scheduling
+        final localNow = tz.TZDateTime.now(location);
+        tz.TZDateTime toSchedule(String hhmm) {
           final parts = hhmm.split(':');
           final h = int.tryParse(parts[0]) ?? 0;
           final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
-          return DateTime(day.year, day.month, day.day, h, m);
+          return tz.TZDateTime(location, localNow.year, localNow.month, localNow.day, h, m);
         }
         return {
-          'Fajr'   : toDateTime(model.fajr),
-          'Sunrise': toDateTime(model.sunrise),
-          'Dhuhr'  : toDateTime(model.dhuhr),
-          'Asr'    : toDateTime(model.asr),
-          'Maghrib': toDateTime(model.maghrib),
-          'Isha'   : toDateTime(model.isha),
+          'Fajr'   : toSchedule(fajrStr),
+          'Sunrise': toSchedule(sunriseStr),
+          'Dhuhr'  : toSchedule(dhuhrStr),
+          'Asr'    : toSchedule(asrStr),
+          'Maghrib': toSchedule(maghribStr),
+          'Isha'   : toSchedule(ishaStr),
+        };
+      }
+
+      Map<String, DateTime> buildTomorrowMap() {
+        final result = AdhanPrayerService.calculatePrayerTimesSync(
+          latitude: lat,
+          longitude: lng,
+          countryCode: countryCode,
+          ianaTimezone: ianaTimezone,
+          date: tomorrowCalcDate,
+        );
+        String fmt(DateTime? utc) => TimezoneResolver.formatHhMm(utc, ianaTimezone);
+
+        final tomorrow = tz.TZDateTime.now(location).add(const Duration(days: 1));
+        tz.TZDateTime toSchedule(String hhmm) {
+          final parts = hhmm.split(':');
+          final h = int.tryParse(parts[0]) ?? 0;
+          final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+          return tz.TZDateTime(location, tomorrow.year, tomorrow.month, tomorrow.day, h, m);
+        }
+        return {
+          'Fajr'   : toSchedule(fmt(result.prayerTimes.fajr)),
+          'Sunrise': toSchedule(fmt(result.prayerTimes.sunrise)),
+          'Dhuhr'  : toSchedule(fmt(result.prayerTimes.dhuhr)),
+          'Asr'    : toSchedule(fmt(result.prayerTimes.asr)),
+          'Maghrib': toSchedule(fmt(result.prayerTimes.maghrib)),
+          'Isha'   : toSchedule(fmt(result.prayerTimes.isha)),
         };
       }
 
       await NotificationService.instance.schedulePrayerNotifications(
-        [buildDayMap(today), buildDayMap(tomorrow)],
+        [buildDayMap(todayCalcDate), buildTomorrowMap()],
         azanEnabled: enabled,
+        ianaTimezone: ianaTimezone,
       );
     } catch (_) {
       // Fail silently — existing notifications remain until next app open.

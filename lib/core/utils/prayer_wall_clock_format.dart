@@ -1,34 +1,33 @@
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mosques_app/core/utils/timezone_resolver.dart';
 
+/// Debug helper that logs prayer times converted to the given timezone.
 class PrayerWallClockFormat {
   PrayerWallClockFormat._();
 
-  static String hourMinute(DateTime? t) {
+  static String hourMinute(DateTime? t, {required String ianaTimezone}) {
     if (t == null) return '00:00';
-    final local = t.toLocal();
-    return '${local.hour.toString().padLeft(2, '0')}:'
-        '${local.minute.toString().padLeft(2, '0')}';
+    return TimezoneResolver.formatHhMm(t, ianaTimezone);
   }
 
-  static void debugLogPrayerSchedule(String tag, PrayerTimes pt) {
+  static void debugLogPrayerSchedule(
+    String tag,
+    PrayerTimes pt, {
+    required String ianaTimezone,
+  }) {
     if (!kDebugMode) return;
 
-    final deviceOffset = DateTime.now().timeZoneOffset;
-
     void line(String label, DateTime utcInstant) {
-      final wall = utcInstant.toLocal();
-      final wronglyShiftedUtcFields = utcInstant.add(deviceOffset);
+      final wall = TimezoneResolver.utcToLocationLocal(utcInstant, ianaTimezone);
       debugPrint(
         '$tag $label │ utc=$utcInstant isUtc=${utcInstant.isUtc} '
-        '│ offset=$deviceOffset '
-        '│ GOOD.toLocal=$wall ⇒ ${hourMinute(utcInstant)} '
-        '│ BAD.add(offset)UTCfields=${wronglyShiftedUtcFields.hour}'
-        ':${wronglyShiftedUtcFields.minute.toString().padLeft(2, '0')} (wrong)',
+        '│ tz=$ianaTimezone '
+        '│ local=$wall ⇒ ${hourMinute(utcInstant, ianaTimezone: ianaTimezone)}',
       );
     }
 
-    debugPrint('$tag ─── prayer wall-clock trace (device now=${DateTime.now()})');
+    debugPrint('$tag ─── prayer wall-clock trace (location tz=$ianaTimezone)');
     line('fajr', pt.fajr);
     line('sunrise', pt.sunrise);
     line('dhuhr', pt.dhuhr);
