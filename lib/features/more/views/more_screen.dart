@@ -373,45 +373,60 @@ class _LocationRowState extends State<_LocationRow> {
     final isAr = context.locale.languageCode == 'ar';
     final city = isAr ? (_cityNameAr ?? _cityName) : _cityName;
     final country = isAr ? (_countryNameAr ?? _countryName) : _countryName;
-    if (city != null && country != null) return '$city، $country';
+    final separator = isAr ? '، ' : ', ';
+    if (city != null && country != null) return '$city$separator$country';
     if (city != null) return city;
     return 'prayer_location_auto'.tr();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _SettingsRow(
-      icon: Icons.location_on_outlined,
-      title: 'prayer_location'.tr(),
-      iconColor: AppColor.primaryColor1,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              _locationLabel(context),
-              overflow: TextOverflow.ellipsis,
-              style: AppStyle.regular14.copyWith(
-                color: AppColor.onSurfaceVariant,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          final homeCubit = context.read<HomeCubit>();
+          final changed = await Navigator.pushNamed(context, Routes.changeLocation);
+          if (changed == true && mounted) {
+            _load();
+            homeCubit.refreshAfterManualLocationChange();
+          }
+        },
+        splashColor: AppColor.surfaceContainerHigh.withValues(alpha: 0.3),
+        highlightColor: AppColor.surfaceContainerHigh.withValues(alpha: 0.3),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          child: Row(
+            children: [
+              Icon(Icons.location_on_outlined, color: AppColor.primaryColor1, size: 24.sp),
+              SizedBox(width: 16.w),
+              Text(
+                'prayer_location'.tr(),
+                style: AppStyle.medium16.copyWith(color: AppColor.onSurface),
               ),
-            ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  _locationLabel(context),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.end,
+                  style: AppStyle.regular14.copyWith(
+                    color: AppColor.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              SizedBox(width: 4.w),
+              Icon(
+                Icons.chevron_right,
+                color: AppColor.outlineVariant,
+                size: 20.sp,
+              ),
+            ],
           ),
-          SizedBox(width: 4.w),
-          Icon(
-            Icons.chevron_right,
-            color: AppColor.outlineVariant,
-            size: 20.sp,
-          ),
-        ],
+        ),
       ),
-      onTap: () async {
-        final homeCubit = context.read<HomeCubit>();
-        final changed = await Navigator.pushNamed(context, Routes.changeLocation);
-        if (changed == true && mounted) {
-          _load();
-          homeCubit.refreshPrayerTimes();
-        }
-      },
     );
   }
 }

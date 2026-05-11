@@ -7,6 +7,8 @@ import 'package:mosques_app/core/errors/failures.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
 import 'package:mosques_app/core/services/notification_service.dart';
+import 'package:mosques_app/core/services/shared_location_service.dart';
+import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/core/utils/location_utils.dart';
 import 'package:mosques_app/features/home/model/home_model.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
@@ -127,6 +129,38 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   }
 
   Future<void> refreshPrayerTimes() => loadPrayerTimes();
+
+  Future<void> refreshAfterManualLocationChange() async {
+    SharedLocationService.instance.invalidateCache();
+    try {
+      emit(const HomeLoading());
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble(BackgroundRescheduleService.prefsLat);
+      final lng = prefs.getDouble(BackgroundRescheduleService.prefsLng);
+      if (lat == null || lng == null) {
+        await loadPrayerTimes();
+        return;
+      }
+      final countryCode = await LocationUtils.getCountryCode(lat, lng, forceRefresh: true);
+      final prayerTimes = AdhanPrayerService.calculatePrayerTimesSync(
+        latitude: lat,
+        longitude: lng,
+        countryCode: countryCode,
+      );
+      _onLoaded(
+        AladhanPrayerTimesModel.fromAdhanPrayerTimes(
+          prayerTimes: prayerTimes,
+          latitude: lat,
+          longitude: lng,
+        ),
+      );
+      await BackgroundRescheduleService.cacheLastLocation(lat, lng);
+      await AppPreferences.saveString(LocationUtils.countryCodePrefsKey, countryCode);
+    } catch (e) {
+      debugPrint('[Home] refreshAfterManualLocationChange error: $e');
+      await loadPrayerTimes();
+    }
+  }
 
   Future<void> loadPrayerTimesForLocation({
     required double latitude,

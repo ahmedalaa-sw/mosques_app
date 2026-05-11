@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/data/cities_data.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
+import 'package:mosques_app/core/services/shared_location_service.dart';
 import 'package:mosques_app/core/utils/app_shared_preferences.dart';
 import 'package:mosques_app/core/utils/location_utils.dart';
 import 'onboarding_state.dart';
@@ -72,6 +73,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     log('[Location] confirm: saving ${current.country.name} / ${current.city.name} '
         '(${current.city.lat}, ${current.city.lng})', name: 'OnboardingCubit');
 
+    SharedLocationService.instance.invalidateCache();
     emit(OnboardingSaving());
 
     await Future.wait([
@@ -80,6 +82,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         current.city.lng,
       ),
       AppPreferences.saveString(LocationUtils.countryCodePrefsKey, current.country.code),
+      LocationUtils.updateCoordinateCache(current.city.lat, current.city.lng),
       AppPreferences.saveString(kCachedCityName, current.city.name),
       AppPreferences.saveString(kCachedCityNameAr, current.city.nameAr),
       AppPreferences.saveString(kCachedCountryName, current.country.name),
@@ -94,6 +97,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   /// Skips city selection and lets HomeCubit fall through to GPS on first load.
   Future<void> skipWithGps() async {
     log('[Location] skipWithGps: user chose GPS-only mode', name: 'OnboardingCubit');
+    SharedLocationService.instance.invalidateCache();
     emit(OnboardingSaving());
     await AppPreferences.saveBool(_kDone, value: true);
     emit(OnboardingDone());

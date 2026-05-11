@@ -376,8 +376,15 @@ class _AnimatedSavingTextState extends State<_AnimatedSavingText> {
 // ─────────────────────────────────────────────────────────────────────────────
 // _LanguageToggle — EN / عربي segmented pill
 // ─────────────────────────────────────────────────────────────────────────────
-class _LanguageToggle extends StatelessWidget {
+class _LanguageToggle extends StatefulWidget {
   const _LanguageToggle();
+
+  @override
+  State<_LanguageToggle> createState() => _LanguageToggleState();
+}
+
+class _LanguageToggleState extends State<_LanguageToggle> {
+  bool _switching = false;
 
   @override
   Widget build(BuildContext context) {
@@ -385,7 +392,18 @@ class _LanguageToggle extends StatelessWidget {
     return Tooltip(
       message: 'onboarding_language_tooltip'.tr(),
       child: GestureDetector(
-        onTap: () => context.setLocale(isAr ? const Locale('en') : const Locale('ar')),
+        onTap: _switching
+            ? null
+            : () {
+                setState(() => _switching = true);
+                final newLocale = isAr ? const Locale('en') : const Locale('ar');
+                context.setLocale(newLocale);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() => _switching = false);
+                  }
+                });
+              },
         child: Container(
           decoration: BoxDecoration(
             color: AppColor.surfaceContainer,

@@ -75,29 +75,40 @@ class LocationUtils {
 
   static double _deg2rad(double deg) => deg * (pi / 180);
 
+  static Future<void> updateCoordinateCache(double lat, double lng) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_latKey, lat);
+    await prefs.setDouble(_lngKey, lng);
+  }
+
   /// 🌍 Main function
   static Future<String> getCountryCode(
-      double lat, double lng) async {
+      double lat, double lng, {bool forceRefresh = false}) async {
     if (kDebugMode) debugPrint('[Country] A — getCountryCode lat=$lat lng=$lng');
     final prefs = await SharedPreferences.getInstance();
 
-    final cachedCountry = prefs.getString(_countryKey);
-    final oldLat = prefs.getDouble(_latKey);
-    final oldLng = prefs.getDouble(_lngKey);
-    if (kDebugMode) debugPrint('[Country] B — cachedCountry=$cachedCountry');
-
-    if (cachedCountry != null &&
-        oldLat != null &&
-        oldLng != null &&
-        _hasMoved(oldLat, oldLng, lat, lng)) {
-      if (kDebugMode) debugPrint('[Country] C — moved, clearing cache');
+    if (forceRefresh) {
+      if (kDebugMode) debugPrint('[Country] B — forceRefresh, clearing cache');
       await prefs.remove(_countryKey);
-    }
+    } else {
+      final cachedCountry = prefs.getString(_countryKey);
+      final oldLat = prefs.getDouble(_latKey);
+      final oldLng = prefs.getDouble(_lngKey);
+      if (kDebugMode) debugPrint('[Country] B — cachedCountry=$cachedCountry');
 
-    final newCached = prefs.getString(_countryKey);
-    if (newCached != null) {
-      if (kDebugMode) debugPrint('[Country] D — returning cached: $newCached');
-      return newCached;
+      if (cachedCountry != null &&
+          oldLat != null &&
+          oldLng != null &&
+          _hasMoved(oldLat, oldLng, lat, lng)) {
+        if (kDebugMode) debugPrint('[Country] C — moved, clearing cache');
+        await prefs.remove(_countryKey);
+      }
+
+      final newCached = prefs.getString(_countryKey);
+      if (newCached != null) {
+        if (kDebugMode) debugPrint('[Country] D — returning cached: $newCached');
+        return newCached;
+      }
     }
 
     final offline = _detectOffline(lat, lng);
