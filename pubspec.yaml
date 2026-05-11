@@ -18,7 +18,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_screenutil: ^5.9.3
-  # geocoding: ^4.0.0
+  geocoding: ^4.0.0
   geolocator: ^14.0.2
   google_nav_bar: ^5.0.7
   hive_flutter: ^1.1.0
