@@ -31,6 +31,7 @@ class _Body extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        context.locale;
         final cubit = context.read<OnboardingCubit>();
 
         final CountryModel? country = switch (state) {
