@@ -12,7 +12,7 @@ class AppConstants {
   // OS-level stream filter: geolocator suppresses emissions until the device
   // has moved this many metres. Keeps the stream lean between 50m emissions
   // while the 250m threshold guards the actual API call.
-  static const locationStreamDistanceFilterMeters = 400;
+  static const locationStreamDistanceFilterMeters = 500;
 
   static const defaultSearchRadiusMeters = 2000;
 }

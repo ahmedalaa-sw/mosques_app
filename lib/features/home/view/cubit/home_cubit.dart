@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mosques_app/core/cubit/location_permission_cubit.dart';
+import 'package:mosques_app/core/cubit/location_permission_state.dart';
 import 'package:mosques_app/core/errors/failures.dart';
 import 'package:mosques_app/core/services/adhan_prayer_service.dart';
 import 'package:mosques_app/core/services/background_reschedule_service.dart';
@@ -19,11 +21,16 @@ import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   final HomeRepository repository;
+  final LocationPermissionCubit _locationPermissionCubit;
 
   AladhanPrayerTimesModel? _loadedPrayerTimes;
   Timer? _prayerTransitionTimer;
 
-  HomeCubit({required this.repository}) : super(const HomeInitial()) {
+  HomeCubit({
+    required this.repository,
+    required LocationPermissionCubit locationPermissionCubit,
+  })  : _locationPermissionCubit = locationPermissionCubit,
+        super(const HomeInitial()) {
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -32,10 +39,10 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       final hadCache = await _tryInstantLoadFromCache();
       if (!hadCache) emit(const HomeLoading());
 
-      bool hasPermission = await repository.hasLocationPermission();
-      if (!hasPermission) {
-        bool granted = await repository.requestLocationPermission();
-        if (!granted) {
+      await _locationPermissionCubit.checkPermission();
+      if (_locationPermissionCubit.state is! LocationPermissionGranted) {
+        await _locationPermissionCubit.requestPermission();
+        if (_locationPermissionCubit.state is! LocationPermissionGranted) {
           if (!hadCache) {
             emit(
               const HomePermissionDenied(
