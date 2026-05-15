@@ -73,11 +73,7 @@ class _SuccessView extends StatelessWidget {
               SizedBox(height: 20.h),
               MosqueActionButtons(mosque: mosque),
               SizedBox(height: 16.h),
-              MosqueAboutCard(
-                amenities: mosque.amenities,
-                address: mosque.address,
-                description: mosque.description,
-              ),
+              MosqueAboutCard(address: mosque.address),
               SizedBox(height: 32.h),
             ],
           ),

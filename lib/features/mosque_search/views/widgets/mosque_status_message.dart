@@ -41,7 +41,7 @@ class MosqueStatusMessage extends StatelessWidget {
               icon: Icon(Icons.refresh_rounded, size: 18.sp),
               label: Text('retry'.tr(), style: TextStyle(fontSize: 14.sp)),
               style: TextButton.styleFrom(
-                foregroundColor: AppColor.primaryColor,
+                foregroundColor: AppColor.secondaryColor,
               ),
             ),
           ],
