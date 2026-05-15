@@ -59,9 +59,16 @@ class _HeroBackground extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Mosque image or gradient placeholder
+        // Mosque image or gradient placeholder with error handling
         if (mosque.imageUrl != null)
-          Image.network(mosque.imageUrl!, fit: BoxFit.cover)
+          Image.network(
+            mosque.imageUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              // Show default placeholder if image fails to load (e.g., no internet)
+              return _MosquePlaceholderArt();
+            },
+          )
         else
           _MosquePlaceholderArt(),
         // Bottom gradient for text legibility
