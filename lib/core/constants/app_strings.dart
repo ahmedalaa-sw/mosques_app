@@ -1,6 +1,6 @@
 class AppStrings {
   // App
-  static const appTitle = 'Al-Masjid';
+  static const appTitle = 'Masjidy';
 
   // Mosque search
   static const searchHint = 'Find a mosque near you...';

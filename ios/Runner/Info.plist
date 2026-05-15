@@ -3,15 +3,15 @@
 <plist version="1.0">
 	<dict>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Al-Masjid needs your location to find nearby mosques.</string>
+		<string>Masjidy needs your location to find nearby mosques.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>Al-Masjid needs your location to find nearby mosques.</string>
+		<string>Masjidy needs your location to find nearby mosques.</string>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Mosques App</string>
+		<string>Masjidy</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>

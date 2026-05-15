@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/constants/app_style.dart';
 import 'package:mosques_app/core/routing/routes.dart';
@@ -355,10 +356,18 @@ class _LocationRowState extends State<_LocationRow> {
   }
 
   Future<void> _load() async {
-    final cityEn = await AppPreferences.getString(OnboardingCubit.kCachedCityName);
-    final cityAr = await AppPreferences.getString(OnboardingCubit.kCachedCityNameAr);
-    final countryEn = await AppPreferences.getString(OnboardingCubit.kCachedCountryName);
-    final countryAr = await AppPreferences.getString(OnboardingCubit.kCachedCountryNameAr);
+    final cityEn = await AppPreferences.getString(
+      OnboardingCubit.kCachedCityName,
+    );
+    final cityAr = await AppPreferences.getString(
+      OnboardingCubit.kCachedCityNameAr,
+    );
+    final countryEn = await AppPreferences.getString(
+      OnboardingCubit.kCachedCountryName,
+    );
+    final countryAr = await AppPreferences.getString(
+      OnboardingCubit.kCachedCountryNameAr,
+    );
     if (mounted) {
       setState(() {
         _cityName = cityEn;
@@ -386,7 +395,10 @@ class _LocationRowState extends State<_LocationRow> {
       child: InkWell(
         onTap: () async {
           final homeCubit = context.read<HomeCubit>();
-          final changed = await Navigator.pushNamed(context, Routes.changeLocation);
+          final changed = await Navigator.pushNamed(
+            context,
+            Routes.changeLocation,
+          );
           if (changed == true && mounted) {
             _load();
             homeCubit.refreshAfterManualLocationChange();
@@ -399,7 +411,11 @@ class _LocationRowState extends State<_LocationRow> {
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           child: Row(
             children: [
-              Icon(Icons.location_on_outlined, color: AppColor.primaryColor1, size: 24.sp),
+              Icon(
+                Icons.location_on_outlined,
+                color: AppColor.primaryColor1,
+                size: 24.sp,
+              ),
               SizedBox(width: 16.w),
               Text(
                 'prayer_location'.tr(),
@@ -483,13 +499,35 @@ class _HelpInfoGroup extends StatelessWidget {
   }
 }
 
-class _VersionFooter extends StatelessWidget {
+class _VersionFooter extends StatefulWidget {
+  @override
+  State<_VersionFooter> createState() => _VersionFooterState();
+}
+
+class _VersionFooterState extends State<_VersionFooter> {
+  String _versionString = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _versionString = 'v${packageInfo.version}';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Text(
-          'version'.tr(),
+          _versionString.isEmpty ? 'version'.tr() : _versionString,
           style: TextStyle(
             color: AppColor.onSurfaceVariant.withValues(alpha: 0.6),
             fontSize: 11.sp,

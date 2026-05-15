@@ -7,10 +7,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-    <application
-        android:label="mosques_app"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+   <application
+    android:label="Masjidy"
+    android:name="${applicationName}"
+    android:icon="@mipmap/ic_launcher"
+    android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

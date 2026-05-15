@@ -1,6 +1,6 @@
 class StringsConstants {
   // ── General ──
-  static const String appName = 'Al-Masjid';
+  static const String appName = 'Masjidy';
   static const String loading = 'Loading...';
   static const String error = 'Something went wrong';
   static const String retry = 'Retry';
@@ -26,7 +26,8 @@ class StringsConstants {
   static const String worshippers = 'worshippers';
   static const String km = 'km';
   static const String reviews = 'reviews';
-  static const String openMapsError = 'Could not open Google Maps on this device.';
+  static const String openMapsError =
+      'Could not open Google Maps on this device.';
 
   // ── Prayer Times ──
   static const String prayerTimes = 'Prayer Times';
@@ -50,12 +51,13 @@ class StringsConstants {
   // ── Settings ──
   static const String settings = 'Settings';
   static const String settingsAndMore = 'Settings & More';
-  static const String settingsSubtitle = 'Customize your spiritual journey and\nmanage your preferences.';
+  static const String settingsSubtitle =
+      'Customize your spiritual journey and\nmanage your preferences.';
   static const String darkMode = 'Dark Mode';
   static const String lightMode = 'Light Mode';
   static const String themeMode = 'Theme Mode';
   static const String language = 'Language';
-  static const String aboutApp = 'About Al-Masjid';
+  static const String aboutApp = 'About Masjidy';
   static const String contactUs = 'Contact Us';
   static const String preferences = 'Preferences';
   static const String helpAndInfo = 'Help & Info';
@@ -68,7 +70,7 @@ class StringsConstants {
 
   // ── Legacy map (kept for backward compatibility) ──
   static const Map<String, String> en = {
-    'appName': 'Al-Masjid',
+    'appName': 'Masjidy',
     'welcome': 'Find mosques near you',
     'categories': 'Categories',
     'seeAll': 'See All',
