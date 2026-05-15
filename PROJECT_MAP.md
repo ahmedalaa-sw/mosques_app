@@ -1,6 +1,6 @@
 # PROJECT_MAP.md — Prayer Time Calculation Fix & Architecture Roadmap
 
-**Project**: Al-Masjid (mosques_app)  
+**Project**: Masjidy (mosques_app)  
 **Date**: 2026-05-12  
 **Scope**: Fix prayer time calculation inconsistency for non-local locations; architectural improvements for timezone safety  
 **Status**: ✅ Implementation complete

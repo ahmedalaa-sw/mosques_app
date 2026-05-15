@@ -1,4 +1,4 @@
-# Performance Analysis Report — Al-Masjid
+# Performance Analysis Report — Masjidy
 
 ## Executive Summary
 
@@ -33,7 +33,7 @@ Remove the `Timer.periodic` entirely. Keep only:
 1. The initial `_fetchAndEmit()` call in `init()`.
 2. The `didChangeAppLifecycleState` re-check on `resumed`.
 
-No behaviour change: the setting is re-read immediately at startup and on every app foreground. The only scenario the polling covered was the user flipping the setting while Al-Masjid was in the foreground, which is indistinguishable from normal behaviour (clock stays correct, format updates on next app resume).
+No behaviour change: the setting is re-read immediately at startup and on every app foreground. The only scenario the polling covered was the user flipping the setting while Masjidy was in the foreground, which is indistinguishable from normal behaviour (clock stays correct, format updates on next app resume).
 
 **Risk level**: Low. `_pollTimer` field and `cancel()` call in `close()` are already present — only the creation and the periodic callback need to be removed.
 

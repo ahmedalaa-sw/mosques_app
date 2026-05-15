@@ -1,5 +1,5 @@
 {
-  "app_title": "Al-Masjid",
+  "app_title": "Masjidy",
   "nav_home": "Home",
   "nav_search": "Search",
   "nav_favorites": "Favorites",
@@ -15,7 +15,7 @@
   "light_mode": "Light Mode",
   "help_and_info": "HELP & INFO",
   "support_center": "Support Center",
-  "about_app": "About Al-Masjid",
+  "about_app": "About Masjidy",
   "privacy_policy": "Privacy Policy",
   "sign_out": "Sign Out",
   "version": "VERSION 2.4.1 (EMERALD)",
@@ -25,16 +25,16 @@
   "english": "English",
   "arabic": "العربية",
 
-  "about_description": "Al-Masjid helps you discover nearby mosques, track prayer times, and navigate your spiritual journey with ease. Built with love for the Muslim community.",
+  "about_description": "Masjidy helps you discover nearby mosques, track prayer times, and navigate your spiritual journey with ease. Built with love for the Muslim community.",
 
   "contact_us": "Contact Us",
   "get_in_touch": "GET IN TOUCH",
   "email_label": "Email",
-  "email_address": "support@al-masjid.app",
+  "email_address": "support@Masjidy.app",
   "website_label": "Website",
-  "website_url": "www.al-masjid.app",
+  "website_url": "www.Masjidy.app",
   "feedback_label": "Feedback",
-  "feedback_subtitle": "Help us improve Al-Masjid",
+  "feedback_subtitle": "Help us improve Masjidy",
 
   "prayer_times": "Prayer Times",
   "prayer_schedule": "Prayer Schedule",
@@ -130,10 +130,10 @@
   "onboarding_gps_note": "Your location will refine automatically via GPS",
 
   "notif_exact_alarm_title": "Allow Precise Prayer Alerts",
-  "notif_exact_alarm_body": "Al-Masjid needs permission to set exact alarms so your prayer notifications fire on time — even when the phone is idle. Tap Allow to open settings.",
+  "notif_exact_alarm_body": "Masjidy needs permission to set exact alarms so your prayer notifications fire on time — even when the phone is idle. Tap Allow to open settings.",
   "notif_exact_alarm_action": "Allow",
   "notif_battery_title": "Disable Battery Restriction",
-  "notif_battery_body": "Your phone's battery optimization may block prayer notifications when the app is closed. Please exempt Al-Masjid to ensure notifications always arrive on time.",
+  "notif_battery_body": "Your phone's battery optimization may block prayer notifications when the app is closed. Please exempt Masjidy to ensure notifications always arrive on time.",
   "notif_battery_action": "Exempt App",
   "notif_dismiss": "Not Now",
 
