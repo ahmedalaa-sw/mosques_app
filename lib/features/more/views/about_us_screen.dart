@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
 import 'package:mosques_app/core/constants/app_style.dart';
 
@@ -16,7 +17,11 @@ class AboutUsScreen extends StatelessWidget {
         backgroundColor: AppColor.appBarColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: AppColor.primaryColor1, size: 20.sp),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColor.primaryColor1,
+            size: 20.sp,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -27,7 +32,11 @@ class AboutUsScreen extends StatelessWidget {
           children: [
             SizedBox(height: 16.h),
             Center(
-              child: Icon(Icons.mosque, color: AppColor.primaryColor1, size: 64.sp),
+              child: Icon(
+                Icons.mosque,
+                color: AppColor.primaryColor1,
+                size: 64.sp,
+              ),
             ),
             SizedBox(height: 24.h),
             Center(
@@ -43,12 +52,7 @@ class AboutUsScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8.h),
-            Center(
-              child: Text(
-                'version'.tr(),
-                style: AppStyle.regular14,
-              ),
-            ),
+            Center(child: Text('version'.tr(), style: AppStyle.regular14)),
             SizedBox(height: 32.h),
             Container(
               width: double.infinity,
@@ -56,7 +60,9 @@ class AboutUsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColor.surfaceContainer,
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppColor.outlineVariant.withValues(alpha: 0.15)),
+                border: Border.all(
+                  color: AppColor.outlineVariant.withValues(alpha: 0.15),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,6 +79,38 @@ class AboutUsScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _VersionDisplay extends StatefulWidget {
+  @override
+  State<_VersionDisplay> createState() => _VersionDisplayState();
+}
+
+class _VersionDisplayState extends State<_VersionDisplay> {
+  String _versionString = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _versionString = 'v${packageInfo.version}';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _versionString.isEmpty ? 'version'.tr() : _versionString,
+      style: AppStyle.regular14,
     );
   }
 }
