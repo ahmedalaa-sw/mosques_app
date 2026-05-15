@@ -1,51 +1,214 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
+# Flutter
+.packages
+pubspec.lock
+/build/
+/ios/Flutter/Flutter.podspec
+*.swiftmodule/
+
+# Dart/Flutter/Plugins
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.fvm/
+fvm_version
+.pub-cache/
+.pub/
+
+# IDEs
+.idea/
+.vscode/
 *.swp
+*.swo
+*~
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
 migrate_working_dir/
-
-# IntelliJ related
+*.sublime-workspace
 *.iml
 *.ipr
 *.iws
-.idea/
 
 # The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
+# VS Code which you may wish to be committed to version control, so this line
 # is commented out by default.
 #.vscode/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Flutter will auto-generate persisted files, and we don't want them polluting SCM
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+*.xcbkptlist
+*.xcconfig
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Exceptions to above rules.
+!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+!/dev/ci/**/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Generated files
+android/app/google-services.json
+ios/GoogleService-Info.plist
+.env
+.env.*
+keys.properties
+signing/
+
+# Gradle
+.gradle/
+gradle-wrapper.jar
+local.properties
+gradle.properties
+
+# Build outputs
+app-release.apk
+app-release-unsigned.apk
+app-*-release.apk
+build/
+!build/flutter_assets/
+
+# iOS
+ios/.symlinks/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.xcframework
+ios/Flutter/.last_build_id
+ios/Flutter/.dart_tool/
+ios/GoogleService-Info.plist
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# Android
+android/app/debug
+android/app/profile
+android/app/release
+android/app/outputs/
+android/.gradle/
+android/build/
+android/gradle.properties
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/app/google-services.json
+android/app/key.jks
+android/keystore.properties
+
+# Web
+web/flutter_service_worker.js
+web/*.js
+web/*.js.map
+
+# Linux
+linux/flutter/generated_plugins.cmake
+linux/flutter/generated_plugins_resources.cmake
+linux/flutter/generated_app_icon_resource.cmake
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugin_registrant.h
+linux/flutter/generated_plugins.cmake
+
+# macOS
+macos/Flutter/GeneratedPluginRegistrant.swift
+macos/Flutter/Flutter-Release.podspec
+macos/Flutter/ephemeral/Flutter.podspec
+macos/Flutter/ephemeral/flutter_export_environment.sh
+macos/Flutter/.last_build_id
+
+# Windows
+windows/flutter/generated_plugins.cmake
+windows/flutter/generated_plugins_resources.cmake
+windows/flutter/generated_app_icon_resource.cmake
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+windows/flutter/generated_plugins.cmake
+
+# Coverage
+coverage/
+lcov.info
+
+# Node.js (if using for any build process)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# VS Code
+.vscode/launch.json
+.vscode/tasks.json
+
+# Environment
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+*.swp
+*.swo
+*~
+.tmp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE-specific files
+.classpath
+.c9/
+*.launch
+.metadata
+*.log
+*.pyc
+*.pyo
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Miscellaneous
+/doc/api/
+/docs/
 .dart_tool/
-.flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
-/coverage/
+flutter_*.png
+linear_tree_*.json
 
-# Symbolication related
-app.*.symbols
+# Sensitive data
+keys.json
+secrets.json
+.env
+API_KEYS.txt
 
-# Obfuscation related
-app.*.map.json
+# Backup files
+*.backup
+*.bak
+*.old
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
 # Claude Code / Anthropic
 .claude/
 CLAUDE.md
 .agent/
 AGENTS.md
+.agents/
 .opencode/
