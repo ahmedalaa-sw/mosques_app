@@ -5,16 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class MosqueAboutCard extends StatelessWidget {
-  final List<String> amenities;
   final String address;
-  final String? description;
 
-  const MosqueAboutCard({
-    super.key,
-    required this.amenities,
-    required this.address,
-    this.description,
-  });
+  const MosqueAboutCard({super.key, required this.address});
 
   @override
   Widget build(BuildContext context) {
@@ -37,28 +30,6 @@ class MosqueAboutCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SectionLabel(
-                  icon: Icons.accessibility_new_rounded,
-                  title: 'supports'.tr(),
-                ),
-                SizedBox(height: 10.h),
-                if (amenities.isNotEmpty)
-                  Wrap(
-                    spacing: 8.w,
-                    runSpacing: 8.h,
-                    children: amenities
-                        .map((amenity) => _AmenityChip(amenityKey: amenity))
-                        .toList(),
-                  )
-                else
-                  _AmenitiesUnavailableCard(),
-                SizedBox(height: 20.h),
-                Divider(
-                  height: 1,
-                  color: AppColor.outlineVariant.withValues(alpha: 0.25),
-                ),
-                SizedBox(height: 20.h),
-                // Location row
-                _SectionLabel(
                   icon: Icons.location_on_rounded,
                   title: 'location'.tr(),
                 ),
@@ -72,121 +43,12 @@ class MosqueAboutCard extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                if (description != null) ...[
-                  SizedBox(height: 20.h),
-                  Divider(
-                    height: 1,
-                    color: AppColor.outlineVariant.withValues(alpha: 0.25),
-                  ),
-                  SizedBox(height: 20.h),
-                  _SectionLabel(
-                    icon: Icons.info_outline_rounded,
-                    title: 'about'.tr(),
-                  ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    description!,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w400,
-                      color: AppColor.onSurfaceVariant,
-                      height: 1.6,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-class _AmenitiesUnavailableCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
-      decoration: BoxDecoration(
-        color: AppColor.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(
-          color: AppColor.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 18.sp,
-            color: AppColor.onSurfaceVariant,
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Text(
-              'amenities_not_available'.tr(),
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColor.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AmenityChip extends StatelessWidget {
-  final String amenityKey;
-
-  const _AmenityChip({required this.amenityKey});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: AppColor.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(
-          color: AppColor.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_amenityIcon(amenityKey), size: 16.sp, color: AppColor.primaryColor),
-          SizedBox(width: 8.w),
-          Text(
-            amenityKey.tr(),
-            style: TextStyle(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
-              color: AppColor.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _amenityIcon(String amenity) {
-    switch (amenity) {
-      case 'amenity_accessible':
-        return Icons.accessible_rounded;
-      case 'amenity_parking':
-        return Icons.local_parking_rounded;
-      case 'amenity_prayer_room':
-        return Icons.mosque_rounded;
-      case 'amenity_wudu':
-        return Icons.water_drop_rounded;
-      default:
-        return Icons.check_circle_outline_rounded;
-    }
   }
 }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mosques_app/core/constants/app_colors.dart';
+import 'package:mosques_app/core/cubit/location_permission_cubit.dart';
+import 'package:mosques_app/core/cubit/location_permission_state.dart';
 import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_cubit.dart';
 import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_states.dart';
 import 'package:mosques_app/features/bottom_nav/views/widgets/glass_nav_bar.dart';
@@ -28,7 +30,10 @@ class BottomNavScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => HomeCubit(repository: HomeRepository())..loadPrayerTimes()),
+        BlocProvider(create: (ctx) => HomeCubit(
+          repository: HomeRepository(),
+          locationPermissionCubit: ctx.read<LocationPermissionCubit>(),
+        )..loadPrayerTimes()),
         BlocProvider(create: (_) => BottomNavCubit()),
         BlocProvider(create: (_) => MosqueSearchCubit()),
         BlocProvider(create: (_) => FavoriteCubit()..loadFavorites()),
@@ -37,7 +42,16 @@ class BottomNavScreen extends StatelessWidget {
         listener: (context, state) {
           if (state is BottomNavChanged) {
             if (state.index == 1) {
-              context.read<MosqueSearchCubit>().startTracking();
+              final permCubit = context.read<LocationPermissionCubit>();
+              if (permCubit.state is LocationPermissionGranted) {
+                context.read<MosqueSearchCubit>().startTracking();
+              } else {
+                permCubit.requestPermission().then((_) {
+                  if (context.mounted) {
+                    context.read<MosqueSearchCubit>().startTracking();
+                  }
+                });
+              }
             } else {
               // Stop GPS stream while on any other tab — battery saving.
               context.read<MosqueSearchCubit>().stopTracking();
