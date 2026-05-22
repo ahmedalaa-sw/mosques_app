@@ -108,18 +108,6 @@ Whether you're traveling or at home, this app ensures you never miss a prayer ti
 
 ---
 
-## 📸 Screenshots
-
-*[Screenshots will showcase the main features]*
-
-- **Home Screen**: Prayer times display with location info
-- **Prayer Times Detail**: Detailed prayer schedule with countdown
-- **Mosque Search**: Find nearby mosques with distance
-- **Favorites**: Saved mosques for quick access
-- **Settings**: Theme, language, and notification preferences
-
----
-
 ## 📋 Requirements
 
 - **Flutter SDK**: 3.22 or higher
@@ -390,9 +378,8 @@ Under the condition of:
 
 For issues, questions, or suggestions:
 
-1. **GitHub Issues**: [Report a Bug](https://github.com/yourusername/mosques_app/issues)
-2. **Discussions**: [Ask Questions](https://github.com/yourusername/mosques_app/discussions)
-3. **Email**: your.email@example.com
+1. **repo**: [Ask Questions About](https://github.com/ahmedalaa-sw/mosques_app/)
+3. **Email**: ahmedalaa10204@gmail.com
 
 ---
 

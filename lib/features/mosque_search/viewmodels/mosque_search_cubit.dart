@@ -48,7 +48,11 @@ class MosqueSearchCubit extends Cubit<MosqueSearchState> {
         .getPositionStream(distanceFilter: _kStreamDistanceFilter)
         .listen(_onPositionUpdate, onError: _onStreamError);
 
-    await loadMosques();
+    // Skip reload when valid data is already displayed (e.g. returning to tab).
+    // _onPositionUpdate will still trigger a fetch if the user moves past the threshold.
+    if (state is! MosqueSearchSuccess) {
+      await loadMosques();
+    }
   }
 
   void stopTracking() {
