@@ -13,11 +13,30 @@ import 'features/more/viewmodels/theme_state.dart';
 class MyApp extends StatelessWidget {
   final AppRouter appRouter;
   final String initialRoute;
+
   const MyApp({
     super.key,
     required this.appRouter,
     this.initialRoute = Routes.bottomNavScreen,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      startLocale: const Locale('en'),
+      child: _AppContent(appRouter: appRouter, initialRoute: initialRoute),
+    );
+  }
+}
+
+class _AppContent extends StatelessWidget {
+  final AppRouter appRouter;
+  final String initialRoute;
+
+  const _AppContent({required this.appRouter, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {

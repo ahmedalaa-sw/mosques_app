@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class EndpointConstants {
   static const String baseUrl = '';
   static const String firstEndpoint = '';
@@ -6,7 +8,10 @@ class EndpointConstants {
   static const String placesBaseUrl =
       'https://maps.googleapis.com/maps/api/place';
   static const String nearbySearch = '/nearbysearch/json';
-  static const String placesApiKey = 'AIzaSyCn2_UWt0RFlO2r83-KXR2kVuIsiukMRJ4';
+  
+  // Load API key from .env file
+  static String get placesApiKey =>
+      dotenv.env['GOOGLE_PLACES_API_KEY'] ?? 'API_KEY_NOT_FOUND';
 
   static String placePhotoUrl(String photoReference, {int maxWidth = 400}) =>
       '$placesBaseUrl/photo'
