@@ -16,7 +16,7 @@ fvm_version
 
 # IDEs
 .idea/
-.vscode/
+.vscode/ 
 *.swp
 *.swo
 *~
