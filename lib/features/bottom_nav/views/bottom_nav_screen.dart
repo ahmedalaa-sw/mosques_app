@@ -6,7 +6,6 @@ import 'package:mosques_app/core/cubit/location_permission_state.dart';
 import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_cubit.dart';
 import 'package:mosques_app/features/bottom_nav/viewmodels/bottom_nav_states.dart';
 import 'package:mosques_app/features/bottom_nav/views/widgets/glass_nav_bar.dart';
-import 'package:mosques_app/features/bottom_nav/views/widgets/test_notification_fab.dart';
 import 'package:mosques_app/features/favorite/viewmodels/favorite_cubit.dart';
 import 'package:mosques_app/features/favorite/views/favorite_screen.dart';
 import 'package:mosques_app/features/home/model/home_repo.dart';
@@ -30,10 +29,12 @@ class BottomNavScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (ctx) => HomeCubit(
-          repository: HomeRepository(),
-          locationPermissionCubit: ctx.read<LocationPermissionCubit>(),
-        )..loadPrayerTimes()),
+        BlocProvider(
+          create: (ctx) => HomeCubit(
+            repository: HomeRepository(),
+            locationPermissionCubit: ctx.read<LocationPermissionCubit>(),
+          )..loadPrayerTimes(),
+        ),
         BlocProvider(create: (_) => BottomNavCubit()),
         BlocProvider(create: (_) => MosqueSearchCubit()),
         BlocProvider(create: (_) => FavoriteCubit()..loadFavorites()),
@@ -62,19 +63,21 @@ class BottomNavScreen extends StatelessWidget {
           builder: (context, state) {
             final cubit = context.read<BottomNavCubit>();
             return PopScope(
-              canPop: cubit.currentIndex == 0,
+              canPop: false,
               onPopInvoked: (didPop) {
-                if (didPop) return;
-                cubit.changeTab(0);
+                if (!didPop && cubit.currentIndex != 0) {
+                  cubit.changeTab(0);
+                }
               },
               child: Scaffold(
                 backgroundColor: AppColor.surfaceDim,
                 extendBody: true,
-                
                 floatingActionButtonLocation:
                     FloatingActionButtonLocation.endFloat,
-                body:
-                    IndexedStack(index: cubit.currentIndex, children: _screens),
+                body: IndexedStack(
+                  index: cubit.currentIndex,
+                  children: _screens,
+                ),
                 bottomNavigationBar: GlassNavBar(
                   currentIndex: cubit.currentIndex,
                   onTap: cubit.changeTab,
