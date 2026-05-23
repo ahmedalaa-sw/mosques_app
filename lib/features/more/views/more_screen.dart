@@ -265,7 +265,10 @@ class _LanguageRow extends StatelessWidget {
           ),
         ],
       ),
-      onTap: () => Navigator.pushNamed(context, Routes.localization),
+      onTap: () => Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamed(Routes.localization),
     );
   }
 }
@@ -395,10 +398,10 @@ class _LocationRowState extends State<_LocationRow> {
       child: InkWell(
         onTap: () async {
           final homeCubit = context.read<HomeCubit>();
-          final changed = await Navigator.pushNamed(
+          final changed = await Navigator.of(
             context,
-            Routes.changeLocation,
-          );
+            rootNavigator: true,
+          ).pushNamed(Routes.changeLocation);
           if (changed == true && mounted) {
             _load();
             homeCubit.refreshAfterManualLocationChange();
@@ -466,7 +469,10 @@ class _HelpInfoGroup extends StatelessWidget {
                 color: AppColor.outlineVariant,
                 size: 20.sp,
               ),
-              onTap: () {},
+              onTap: () => Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(Routes.supportCenter),
             ),
             _DividerLine(),
             _SettingsRow(
@@ -478,7 +484,10 @@ class _HelpInfoGroup extends StatelessWidget {
                 color: AppColor.outlineVariant,
                 size: 20.sp,
               ),
-              onTap: () => Navigator.pushNamed(context, Routes.aboutUs),
+              onTap: () => Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(Routes.aboutUs),
             ),
             _DividerLine(),
             _SettingsRow(
@@ -490,7 +499,10 @@ class _HelpInfoGroup extends StatelessWidget {
                 color: AppColor.outlineVariant,
                 size: 20.sp,
               ),
-              onTap: () {},
+              onTap: () => Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(Routes.privacyPolicy),
             ),
           ],
         ),
@@ -536,13 +548,13 @@ class _VersionFooterState extends State<_VersionFooter> {
           ),
         ),
         SizedBox(height: 4.h),
-        Text(
-          'tagline'.tr(),
-          style: TextStyle(
-            color: AppColor.onSurfaceVariant.withValues(alpha: 0.3),
-            fontSize: 10.sp,
-          ),
-        ),
+        // Text(
+        //   'tagline'.tr(),
+        //   style: TextStyle(
+        //     color: AppColor.onSurfaceVariant.withValues(alpha: 0.3),
+        //     fontSize: 10.sp,
+        //   ),
+        // ),
       ],
     );
   }

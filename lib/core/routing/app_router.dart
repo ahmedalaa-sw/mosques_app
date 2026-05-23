@@ -8,6 +8,8 @@ import 'package:mosques_app/features/more/views/change_location_screen.dart';
 import 'package:mosques_app/features/more/views/contact_us_screen.dart';
 import 'package:mosques_app/features/more/views/localization_screen.dart';
 import 'package:mosques_app/features/more/views/theme_screen.dart';
+import 'package:mosques_app/features/more/views/privacy_policy_screen.dart';
+import 'package:mosques_app/features/more/views/support_center_screen.dart';
 import 'package:mosques_app/features/mosque_details/repo/mosque_details_repo.dart';
 import 'package:mosques_app/features/mosque_details/viewmodels/mosque_details_cubit.dart';
 import 'package:mosques_app/features/mosque_details/views/mosque_details_screen.dart';
@@ -34,6 +36,10 @@ class AppRouter {
         return _createRoute(const ThemeScreen());
       case Routes.contactUs:
         return _createRoute(const ContactUsScreen());
+      case Routes.privacyPolicy:
+        return _createRoute(const PrivacyPolicyScreen());
+      case Routes.supportCenter:
+        return _createRoute(const SupportCenterScreen());
       case Routes.changeLocation:
         return _createRoute(const ChangeLocationScreen());
       case Routes.mosqueDetails:

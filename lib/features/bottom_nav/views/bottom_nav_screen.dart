@@ -61,17 +61,24 @@ class BottomNavScreen extends StatelessWidget {
         child: BlocBuilder<BottomNavCubit, BottomNavState>(
           builder: (context, state) {
             final cubit = context.read<BottomNavCubit>();
-            return Scaffold(
-              backgroundColor: AppColor.surfaceDim,
-              extendBody: true,
-              
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endFloat,
-              body:
-                  IndexedStack(index: cubit.currentIndex, children: _screens),
-              bottomNavigationBar: GlassNavBar(
-                currentIndex: cubit.currentIndex,
-                onTap: cubit.changeTab,
+            return PopScope(
+              canPop: cubit.currentIndex == 0,
+              onPopInvoked: (didPop) {
+                if (didPop) return;
+                cubit.changeTab(0);
+              },
+              child: Scaffold(
+                backgroundColor: AppColor.surfaceDim,
+                extendBody: true,
+                
+                floatingActionButtonLocation:
+                    FloatingActionButtonLocation.endFloat,
+                body:
+                    IndexedStack(index: cubit.currentIndex, children: _screens),
+                bottomNavigationBar: GlassNavBar(
+                  currentIndex: cubit.currentIndex,
+                  onTap: cubit.changeTab,
+                ),
               ),
             );
           },
