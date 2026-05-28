@@ -29,8 +29,8 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   HomeCubit({
     required this.repository,
     required LocationPermissionCubit locationPermissionCubit,
-  })  : _locationPermissionCubit = locationPermissionCubit,
-        super(const HomeInitial()) {
+  }) : _locationPermissionCubit = locationPermissionCubit,
+       super(const HomeInitial()) {
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -63,10 +63,10 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
         final result = await repository.getPrayerTimesForCurrentLocation();
         bool succeeded = false;
-        result.fold(
-          (failure) => lastFailure = failure,
-          (prayerTimes) { _onLoaded(prayerTimes); succeeded = true; },
-        );
+        result.fold((failure) => lastFailure = failure, (prayerTimes) {
+          _onLoaded(prayerTimes);
+          succeeded = true;
+        });
         if (succeeded) return;
       }
 
@@ -75,21 +75,25 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
         if (lastFailure is ServerFailure && lastFailure!.statusCode == 403) {
           emit(HomePermissionDenied(message: lastFailure!.message));
         } else {
-          emit(HomeError(
-            message: lastFailure?.message ?? '',
-            statusCode: lastFailure is ServerFailure
-                ? (lastFailure as ServerFailure).statusCode
-                : null,
-          ));
+          emit(
+            HomeError(
+              message: lastFailure?.message ?? '',
+              statusCode: lastFailure is ServerFailure
+                  ? (lastFailure as ServerFailure).statusCode
+                  : null,
+            ),
+          );
         }
       }
     } catch (e) {
       debugPrint('[Home] CATCH — $e');
       if (state is! HomeLoaded) {
-        emit(HomeError(
-          message: e.toString().replaceFirst('Exception: ', ''),
-          statusCode: null,
-        ));
+        emit(
+          HomeError(
+            message: e.toString().replaceFirst('Exception: ', ''),
+            statusCode: null,
+          ),
+        );
       }
     }
   }
@@ -105,7 +109,8 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
       final countryCode =
           prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
-      final ianaTimezone = prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
+      final ianaTimezone =
+          prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
           TimezoneResolver.fromCountryCode(countryCode);
       final result = AdhanPrayerService.calculatePrayerTimesSync(
         latitude: lat,
@@ -118,6 +123,7 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
           result: result,
           latitude: lat,
           longitude: lng,
+          countryCode: countryCode,
         ),
       );
       return true;
@@ -133,11 +139,13 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   void _onCacheLoaded(AladhanPrayerTimesModel prayerTimes) {
     _loadedPrayerTimes = prayerTimes;
     final currentPrayer = _getCurrentPrayerName(prayerTimes);
-    emit(HomeLoaded(
-      prayerTimes: prayerTimes,
-      prayers: prayerTimes.toHousePrayerModels(currentPrayer),
-      currentPrayerName: currentPrayer,
-    ));
+    emit(
+      HomeLoaded(
+        prayerTimes: prayerTimes,
+        prayers: prayerTimes.toHousePrayerModels(currentPrayer),
+        currentPrayerName: currentPrayer,
+      ),
+    );
     _scheduleNextPrayerTransition(prayerTimes);
   }
 
@@ -154,7 +162,11 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
         await loadPrayerTimes();
         return;
       }
-      final countryCode = await LocationUtils.getCountryCode(lat, lng, forceRefresh: true);
+      final countryCode = await LocationUtils.getCountryCode(
+        lat,
+        lng,
+        forceRefresh: true,
+      );
       final ianaTimezone = TimezoneResolver.fromCountryCode(countryCode);
       final result = AdhanPrayerService.calculatePrayerTimesSync(
         latitude: lat,
@@ -166,11 +178,18 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
         result: result,
         latitude: lat,
         longitude: lng,
+        countryCode: countryCode,
       );
       _onLoaded(model);
       await BackgroundRescheduleService.cacheLastLocation(lat, lng);
-      await AppPreferences.saveString(LocationUtils.countryCodePrefsKey, countryCode);
-      await AppPreferences.saveString(TimezoneResolver.ianaTimezonePrefsKey, ianaTimezone);
+      await AppPreferences.saveString(
+        LocationUtils.countryCodePrefsKey,
+        countryCode,
+      );
+      await AppPreferences.saveString(
+        TimezoneResolver.ianaTimezonePrefsKey,
+        ianaTimezone,
+      );
     } catch (e) {
       debugPrint('[Home] refreshAfterManualLocationChange error: $e');
       await loadPrayerTimes();
@@ -212,11 +231,13 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
     _loadedPrayerTimes = prayerTimes;
     final currentPrayer = _getCurrentPrayerName(prayerTimes);
     final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
-    emit(HomeLoaded(
-      prayerTimes: prayerTimes,
-      prayers: prayers,
-      currentPrayerName: currentPrayer,
-    ));
+    emit(
+      HomeLoaded(
+        prayerTimes: prayerTimes,
+        prayers: prayers,
+        currentPrayerName: currentPrayer,
+      ),
+    );
     _scheduleNotifications(prayerTimes);
     BackgroundRescheduleService.cacheLastLocation(
       prayerTimes.latitude,
@@ -268,11 +289,15 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       _prayerTransitionTimer = Timer(next.difference(now), _onPrayerTransition);
     } else {
       // All prayers done for today — reload at midnight+1min in the location tz
-      final midnight = tz.TZDateTime(location, now.year, now.month, now.day + 1, 0, 1);
-      _prayerTransitionTimer = Timer(
-        midnight.difference(now),
-        loadPrayerTimes,
+      final midnight = tz.TZDateTime(
+        location,
+        now.year,
+        now.month,
+        now.day + 1,
+        0,
+        1,
       );
+      _prayerTransitionTimer = Timer(midnight.difference(now), loadPrayerTimes);
     }
   }
 
@@ -282,11 +307,13 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
 
     final currentPrayer = _getCurrentPrayerName(prayerTimes);
     final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
-    emit(HomeLoaded(
-      prayerTimes: prayerTimes,
-      prayers: prayers,
-      currentPrayerName: currentPrayer,
-    ));
+    emit(
+      HomeLoaded(
+        prayerTimes: prayerTimes,
+        prayers: prayers,
+        currentPrayerName: currentPrayer,
+      ),
+    );
     _scheduleNextPrayerTransition(prayerTimes);
   }
 
@@ -305,11 +332,13 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       return;
     }
     final prayers = prayerTimes.toHousePrayerModels(currentPrayer);
-    emit(HomeLoaded(
-      prayerTimes: prayerTimes,
-      prayers: prayers,
-      currentPrayerName: currentPrayer,
-    ));
+    emit(
+      HomeLoaded(
+        prayerTimes: prayerTimes,
+        prayers: prayers,
+        currentPrayerName: currentPrayer,
+      ),
+    );
     _scheduleNextPrayerTransition(prayerTimes);
   }
 
@@ -386,16 +415,19 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
   void _scheduleNotifications(AladhanPrayerTimesModel prayerTimes) async {
     final prefs = await SharedPreferences.getInstance();
     final azanEnabled = prefs.getBool('azan_enabled') ?? false;
-    final countryCode = prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
-    final ianaTimezone = prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
+    final countryCode =
+        prefs.getString(LocationUtils.countryCodePrefsKey) ?? 'US';
+    final ianaTimezone =
+        prefs.getString(TimezoneResolver.ianaTimezonePrefsKey) ??
         prayerTimes.ianaTimezone;
 
     final location = tz.getLocation(ianaTimezone);
     final today = tz.TZDateTime.now(location);
 
     // Calculate tomorrow based on the location's timezone
-    final tomorrowCalcDate = TimezoneResolver.todayAt(ianaTimezone)
-        .add(const Duration(days: 1));
+    final tomorrowCalcDate = TimezoneResolver.todayAt(
+      ianaTimezone,
+    ).add(const Duration(days: 1));
 
     Map<String, DateTime> buildDayMap(
       DateTime day,
@@ -408,13 +440,14 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
         final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
         return tz.TZDateTime(loc, day.year, day.month, day.day, h, m);
       }
+
       return {
-        'Fajr'   : toDateTime(times.fajr),
+        'Fajr': toDateTime(times.fajr),
         'Sunrise': toDateTime(times.sunrise),
-        'Dhuhr'  : toDateTime(times.dhuhr),
-        'Asr'    : toDateTime(times.asr),
+        'Dhuhr': toDateTime(times.dhuhr),
+        'Asr': toDateTime(times.asr),
         'Maghrib': toDateTime(times.maghrib),
-        'Isha'   : toDateTime(times.isha),
+        'Isha': toDateTime(times.isha),
       };
     }
 
@@ -429,12 +462,16 @@ class HomeCubit extends Cubit<HomeState> with WidgetsBindingObserver {
       result: tomorrowResult,
       latitude: prayerTimes.latitude,
       longitude: prayerTimes.longitude,
+      countryCode: countryCode,
     );
 
     // Today's date in the location timezone for building TZDateTime
     final todayDate = DateTime(today.year, today.month, today.day);
-    final tomorrowDate = DateTime(today.year, today.month, today.day)
-        .add(const Duration(days: 1));
+    final tomorrowDate = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).add(const Duration(days: 1));
 
     await NotificationService.instance.schedulePrayerNotifications(
       [

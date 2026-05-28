@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "com.example.mosques_app"
     compileSdk = flutter.compileSdkVersion
+    buildToolsVersion = "35.0.0"
     ndkVersion = "29.0.14033849"
 
     compileOptions {

@@ -15,12 +15,15 @@ subprojects {
     afterEvaluate {
         if (project.hasProperty("android")) {
             (project.extensions.getByName("android") as com.android.build.gradle.BaseExtension).apply {
-                compileSdkVersion(36)
+                compileSdkVersion(35)
+                buildToolsVersion = "35.0.0"
                 ndkVersion = "29.0.14033849"
             }
         }
     }
 }
+
+
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

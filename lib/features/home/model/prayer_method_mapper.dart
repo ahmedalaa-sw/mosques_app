@@ -16,6 +16,64 @@ class PrayerMethodMapper {
     return params;
   }
 
+  static bool useHighLatitudeRule(double latitude) => latitude.abs() > 65;
+
+  static int apiMethodForCountry(String code) {
+    switch (code.toUpperCase()) {
+      case 'EG':
+        return 5; // Egyptian
+      case 'SA':
+      case 'KW':
+      case 'AE':
+      case 'QA':
+      case 'BH':
+        return 4; // Umm Al-Qura
+      case 'PK':
+      case 'IN':
+      case 'BD':
+        return 1; // Karachi
+      case 'MY':
+      case 'ID':
+      case 'SG':
+        return 11; // Singapore
+      case 'TR':
+        return 13; // Turkey
+      case 'US':
+      case 'CA':
+        return 2; // ISNA / North America
+      default:
+        return 2; // Muslim World League fallback
+    }
+  }
+
+  static String methodNameForCountry(String code) {
+    switch (code.toUpperCase()) {
+      case 'EG':
+        return 'Egyptian';
+      case 'SA':
+      case 'KW':
+      case 'AE':
+      case 'QA':
+      case 'BH':
+        return 'Umm Al-Qura';
+      case 'PK':
+      case 'IN':
+      case 'BD':
+        return 'Karachi';
+      case 'MY':
+      case 'ID':
+      case 'SG':
+        return 'Singapore';
+      case 'TR':
+        return 'Turkiye';
+      case 'US':
+      case 'CA':
+        return 'North America';
+      default:
+        return 'Muslim World League';
+    }
+  }
+
   static CalculationParameters _getBaseParameters(String code) {
     switch (code) {
       case 'EG':
@@ -50,4 +108,4 @@ class PrayerMethodMapper {
         return CalculationMethodParameters.muslimWorldLeague();
     }
   }
-}  
+}
