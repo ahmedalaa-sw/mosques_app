@@ -2,10 +2,10 @@ import 'dart:developer' as dev;
 import 'dart:ui' show Color;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
+import 'timezone_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
+
 import 'package:timezone/timezone.dart' as tz;
 import 'package:workmanager/workmanager.dart';
 
@@ -301,60 +301,9 @@ class BackgroundRescheduleService {
 
   // ── Timezone initialisation ───────────────────────────────────────────────
 
+  /// Delegates to [TimezoneService] for centralized, single-init handling.
   static Future<void> _initTimezone() async {
-    tz.initializeTimeZones();
-
-    // 1 — preferred
-    try {
-      final name = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(name));
-      return;
-    } catch (e) {
-      dev.log('[BackgroundReschedule] FlutterTimezone failed: $e');
-    }
-
-    // 2 — UTC-offset fallback
-    try {
-      final offset = DateTime.now().timeZoneOffset;
-      final name   = _ianaFromOffset(offset);
-      tz.setLocalLocation(tz.getLocation(name));
-      dev.log('[BackgroundReschedule] Timezone fallback: $name');
-      return;
-    } catch (_) {}
-
-    // 3 — last resort
-    dev.log('[BackgroundReschedule] WARNING: using UTC');
-    tz.setLocalLocation(tz.UTC);
-  }
-
-  static String _ianaFromOffset(Duration offset) {
-    const table = <int, String>{
-      -720: 'Etc/GMT+12',       -660: 'Pacific/Pago_Pago',
-      -600: 'Pacific/Honolulu', -570: 'Pacific/Marquesas',
-      -540: 'America/Anchorage',-480: 'America/Los_Angeles',
-      -420: 'America/Denver',   -360: 'America/Chicago',
-      -300: 'America/New_York', -240: 'America/Halifax',
-      -210: 'America/St_Johns', -180: 'America/Sao_Paulo',
-      -120: 'Atlantic/South_Georgia', -60: 'Atlantic/Azores',
-          0: 'Europe/London',       60: 'Europe/Paris',
-        120: 'Africa/Cairo',       180: 'Asia/Riyadh',
-        210: 'Asia/Tehran',        240: 'Asia/Dubai',
-        270: 'Asia/Kabul',         300: 'Asia/Karachi',
-        330: 'Asia/Kolkata',       345: 'Asia/Kathmandu',
-        360: 'Asia/Dhaka',         390: 'Asia/Yangon',
-        420: 'Asia/Bangkok',       480: 'Asia/Shanghai',
-        525: 'Australia/Eucla',    540: 'Asia/Tokyo',
-        570: 'Australia/Darwin',   600: 'Australia/Sydney',
-        630: 'Australia/Lord_Howe',660: 'Pacific/Noumea',
-        720: 'Pacific/Auckland',   765: 'Pacific/Chatham',
-        780: 'Pacific/Apia',       840: 'Pacific/Kiritimati',
-    };
-    final minutes = offset.inMinutes;
-    if (table.containsKey(minutes)) return table[minutes]!;
-    final nearest = table.keys.reduce(
-      (a, b) => (a - minutes).abs() <= (b - minutes).abs() ? a : b,
-    );
-    return table[nearest]!;
+    await TimezoneService.ensureInitialized();
   }
 
   // ── Notification details ──────────────────────────────────────────────────

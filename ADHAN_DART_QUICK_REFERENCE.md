@@ -66,7 +66,7 @@ AdhanPrayerService.setCalculationMethod(
 ```dart
 AdhanPrayerService.setMadhab(Madhab.shafii);   // Default
 // OR
-AdhanPrayerService.setMadhab(Madhab.hanafi);   // 2:1 shadow for Asr
+AdhanPrayerService.setMadhab(Madhab.shafi);   // 2:1 shadow for Asr
 ```
 
 ### 4. Get Current Configuration
@@ -154,7 +154,7 @@ AladhanPrayerTimesModel {
 | Madhab | Code | Asr Calculation |
 |--------|------|-----------------|
 | Shafii | `Madhab.shafii` | **Default**, 1:1 shadow ratio |
-| Hanafi | `Madhab.hanafi` | 2:1 shadow ratio |
+| Hanafi | `Madhab.shafi` | 2:1 shadow ratio |
 
 ## Error Handling
 

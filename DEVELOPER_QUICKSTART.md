@@ -323,7 +323,7 @@ Madhab.shafii
 void main() {
   // Set preferred method before running app
   AdhanPrayerService.setCalculationMethod(CalculationMethod.northAmerica);
-  AdhanPrayerService.setMadhab(Madhab.hanafi);
+  AdhanPrayerService.setMadhab(Madhab.shafi);
   
   runApp(const MyApp());
 }

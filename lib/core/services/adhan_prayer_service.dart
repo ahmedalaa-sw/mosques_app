@@ -34,11 +34,12 @@ class AdhanPrayerService {
     required double longitude,
   }) async {
     final coordinates = Coordinates(latitude, longitude);
-    final countryCode =
-        await LocationUtils.getCountryCode(latitude, longitude);
-    final ianaTimezone =
-        TimezoneResolver.fromCountryCode(countryCode);
-    final params = PrayerMethodMapper.fromCountry(countryCode);
+    final countryCode = await LocationUtils.getCountryCode(latitude, longitude);
+    final ianaTimezone = TimezoneResolver.fromCountryCode(countryCode);
+    final params = PrayerMethodMapper.fromCountry(
+      countryCode,
+      latitude: latitude,
+    );
     params.madhab = Madhab.shafi;
     final date = TimezoneResolver.todayAt(ianaTimezone);
     return PrayerCalculationResult(
@@ -73,7 +74,10 @@ class AdhanPrayerService {
     final coordinates = Coordinates(latitude, longitude);
     final resolvedTimezone =
         ianaTimezone ?? TimezoneResolver.fromCountryCode(countryCode);
-    final params = PrayerMethodMapper.fromCountry(countryCode);
+    final params = PrayerMethodMapper.fromCountry(
+      countryCode,
+      latitude: latitude,
+    );
     params.madhab = Madhab.shafi;
     final resolvedDate = date ?? TimezoneResolver.todayAt(resolvedTimezone);
     return PrayerCalculationResult(

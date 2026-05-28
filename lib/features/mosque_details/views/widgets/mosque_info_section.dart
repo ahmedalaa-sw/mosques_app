@@ -36,17 +36,10 @@ class _StatusAndRatingRow extends StatelessWidget {
     return Row(
       children: [
         // Open / Closed badge
-        _GlassBadge(
-          label: mosque.statusLabel.tr(),
-          color: _statusColor(),
-        ),
+        _GlassBadge(label: mosque.statusLabel.tr(), color: _statusColor()),
         if (mosque.rating > 0) ...[
           SizedBox(width: 10.w),
-          Icon(
-            Icons.star_rounded,
-            size: 16.sp,
-            color: AppColor.secondaryColor,
-          ),
+          Icon(Icons.star_rounded, size: 16.sp, color: AppColor.secondaryColor),
           SizedBox(width: 4.w),
           Text(
             mosque.rating.toStringAsFixed(1),
@@ -81,15 +74,13 @@ class _StatChipsRow extends StatelessWidget {
       children: [
         _StatChip(
           icon: Icons.location_on_rounded,
-          label:
-              '${mosque.distanceKm.toStringAsFixed(1)} ${'km'.tr()}',
+          label: '${mosque.distanceKm.toStringAsFixed(1)} ${'km'.tr()}',
         ),
         SizedBox(width: 10.w),
         if (mosque.capacity != null) ...[
           _StatChip(
             icon: Icons.people_rounded,
-            label:
-                '${_formatCapacity(mosque.capacity!)} ${'worshippers'.tr()}',
+            label: '${_formatCapacity(mosque.capacity!)} ${'worshippers'.tr()}',
           ),
         ],
       ],

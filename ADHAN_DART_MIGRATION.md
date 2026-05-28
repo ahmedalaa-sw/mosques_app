@@ -113,7 +113,7 @@ final madhabs = AdhanPrayerService.getAvailableMadhabs();
    - Asr shadow ratio: 1:1
 
 2. **Hanafi**
-   - Madhab: `Madhab.hanafi`
+   - Madhab: `Madhab.shafi`
    - Asr shadow ratio: 2:1
 
 ## Data Flow
@@ -222,7 +222,7 @@ AdhanPrayerService.setCalculationMethod(
 ### Setting Madhab
 ```dart
 // Affects Asr prayer calculation
-AdhanPrayerService.setMadhab(Madhab.hanafi);
+AdhanPrayerService.setMadhab(Madhab.shafi);
 ```
 
 ### Making Configuration User-Configurable

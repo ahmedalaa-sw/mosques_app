@@ -53,10 +53,7 @@ class MosqueListCard extends StatelessWidget {
                   amenities: amenities,
                 ),
               ),
-              if (trailing != null) ...[
-                SizedBox(width: 8.w),
-                trailing!,
-              ],
+              if (trailing != null) ...[SizedBox(width: 8.w), trailing!],
             ],
           ),
         ),
@@ -180,14 +177,10 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badges = <Widget>[
-      _Chip(label: statusLabel.tr(), color: statusColor),
-    ];
+    final badges = <Widget>[_Chip(label: statusLabel.tr(), color: statusColor)];
 
     for (final amenity in amenities) {
-      badges.add(
-        _Chip(label: amenity.tr(), color: AppColor.onSurfaceVariant),
-      );
+      badges.add(_Chip(label: amenity.tr(), color: AppColor.onSurfaceVariant));
     }
 
     return Wrap(spacing: 6.w, runSpacing: 4.h, children: badges);

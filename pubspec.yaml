@@ -7,7 +7,7 @@ environment:
   sdk: ^3.8.0
 
 dependencies:
-  adhan_dart: ^1.2.0
+  adhan_dart: ^2.0.1
   arabic_search: ^0.2.3
   dartz: ^0.10.1
   dio: ^5.9.2

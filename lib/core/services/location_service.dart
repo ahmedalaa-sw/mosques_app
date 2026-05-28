@@ -4,8 +4,9 @@ import 'package:geolocator/geolocator.dart';
 class LocationService {
   Future<Position> getCurrentLocation() async {
     if (kDebugMode) debugPrint('[Loc] A — isLocationServiceEnabled?');
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled()
-        .timeout(const Duration(seconds: 5));
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+      const Duration(seconds: 5),
+    );
     if (kDebugMode) debugPrint('[Loc] B — serviceEnabled=$serviceEnabled');
     if (!serviceEnabled) {
       throw Exception(
@@ -15,8 +16,9 @@ class LocationService {
     }
 
     if (kDebugMode) debugPrint('[Loc] C — checkPermission');
-    final permission = await Geolocator.checkPermission()
-        .timeout(const Duration(seconds: 5));
+    final permission = await Geolocator.checkPermission().timeout(
+      const Duration(seconds: 5),
+    );
     if (kDebugMode) debugPrint('[Loc] D — permission=$permission');
 
     // Only guard; permission requesting belongs to HomeCubit / the caller.
@@ -28,19 +30,26 @@ class LocationService {
       );
     }
 
-    if (kDebugMode) debugPrint('[Loc] E — getCurrentPosition (timeout 15s)');
-    final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.medium,
-        timeLimit: Duration(seconds: 15),
-      ),
-    ).timeout(
-      const Duration(seconds: 15),
-      onTimeout: () => throw Exception(
-        'Location timed out. Please ensure GPS is enabled and try again.',
-      ),
-    );
-    if (kDebugMode) debugPrint('[Loc] F — position=${pos.latitude},${pos.longitude}');
+    if (kDebugMode)
+      debugPrint('[Loc] E — getCurrentPosition (timeout 15s, HIGH accuracy)');
+    final pos =
+        await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 15),
+          ),
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw Exception(
+            'Location timed out. Please ensure GPS is enabled and try again.',
+          ),
+        );
+    if (kDebugMode) {
+      debugPrint('[Loc] F — position=${pos.latitude},${pos.longitude}');
+      debugPrint(
+        '[Loc] G — altitude=${pos.altitude}m, accuracy=${pos.accuracy}m',
+      );
+    }
     return pos;
   }
 
@@ -61,7 +70,8 @@ class LocationService {
   static Future<bool> hasPermission() async {
     try {
       final p = await Geolocator.checkPermission();
-      return p == LocationPermission.whileInUse || p == LocationPermission.always;
+      return p == LocationPermission.whileInUse ||
+          p == LocationPermission.always;
     } catch (_) {
       return false;
     }
@@ -70,7 +80,8 @@ class LocationService {
   static Future<bool> requestPermission() async {
     try {
       final p = await Geolocator.requestPermission();
-      return p == LocationPermission.whileInUse || p == LocationPermission.always;
+      return p == LocationPermission.whileInUse ||
+          p == LocationPermission.always;
     } catch (_) {
       return false;
     }

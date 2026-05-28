@@ -7,6 +7,7 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'core/services/background_reschedule_service.dart';
+import 'core/services/timezone_service.dart';
 import 'core/network/dio_helper.dart';
 import 'core/routing/app_router.dart';
 import 'core/routing/routes.dart';
@@ -20,6 +21,10 @@ void main() async {
 
   // Load environment variables
   await dotenv.load(fileName: '.env');
+
+  // Initialize timezone database FIRST — must happen before any service
+  // that uses tz.getLocation() or prayer time calculations.
+  await TimezoneService.ensureInitialized();
 
   // Initialize localization
   await EasyLocalization.ensureInitialized();
@@ -38,8 +43,8 @@ void main() async {
 
   // Log timezone info
   log("Date time now : ${DateTime.now()}");
-  log(DateTime.now().timeZoneName);
-  log(DateTime.now().timeZoneOffset.toString());
+  log("Device timezone: ${TimezoneService.deviceTimezone}");
+  log("UTC offset: ${DateTime.now().timeZoneOffset}");
 
   // Determine initial route based on onboarding status
   final onboardingDone = await OnboardingCubit.isOnboardingDone();
