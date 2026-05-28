@@ -13,8 +13,8 @@ class PrayerNotificationConfig {
     required this.azanChannelId,
     required this.channelName,
     required this.channelDescription,
-    required this.callSound,
-    required this.azanSound,
+     required this.callSound,
+     required this.azanSound,
     this.alwaysCallOnly = false,
   });
 
